@@ -2,8 +2,7 @@ import sys
 import ctypes
 from pathlib import Path
 from PySide6.QtCore import QUrl, QTimer, Qt
-from PySide6.QtGui import QFont
-from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QGuiApplication, QFont
 from PySide6.QtQml import QQmlApplicationEngine, qmlRegisterType
 from PySide6.QtQuick import QQuickWindow
 
@@ -25,10 +24,7 @@ def enable_mica(hwnd):
 
 
 if __name__ == "__main__":
-    # 关键：启用窗口透明背景，让圆角四角穿透到桌面
-    QApplication.setAttribute(Qt.WA_TranslucentBackground)
-
-    app = QApplication(sys.argv)
+    app = QGuiApplication(sys.argv)
     app.setFont(QFont("Microsoft YaHei", 9))
 
     qmlRegisterType(Backend, "App.Backend", 1, 0, "Backend")
@@ -42,11 +38,21 @@ if __name__ == "__main__":
 
     root_obj = engine.rootObjects()[0]
 
-    # 设置窗口颜色透明
     if isinstance(root_obj, QQuickWindow):
+        # 从 Python 侧强制设置无边框 + 透明
+        root_obj.setFlags(root_obj.flags() | Qt.FramelessWindowHint)
         root_obj.setColor(Qt.transparent)
+        # Win32: 设置 WS_EX_LAYERED 以支持圆角穿透
+        try:
+            hwnd = int(root_obj.winId())
+            GWL_EXSTYLE = -20
+            WS_EX_LAYERED = 0x00080000
+            style = ctypes.windll.user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
+            ctypes.windll.user32.SetWindowLongW(hwnd, GWL_EXSTYLE, style | WS_EX_LAYERED)
+        except Exception:
+            pass
 
-    # 应用 Win11 Mica 特效（延迟调用，等窗口完全创建）
+    # 应用 Win11 Mica 特效
     def apply_mica():
         hwnd = int(root_obj.winId())
         enable_mica(hwnd)
