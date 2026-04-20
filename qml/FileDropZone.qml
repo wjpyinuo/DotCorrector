@@ -45,17 +45,15 @@ Rectangle {
         }
     }
 
-    // 中心提示
+    // ============ 待机状态：空 ============
     Column {
         anchors.centerIn: parent
         spacing: 12
-        visible: !root.busy
+        visible: !root.busy && root.files.length === 0
 
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
-            text: root.files.length > 0
-                ? "已选择 " + root.files.length + " 个文件"
-                : "拖入文件到这里"
+            text: "拖入文件到这里"
             color: root.textColor
             font.pixelSize: 16
             font.bold: true
@@ -80,7 +78,138 @@ Rectangle {
         }
     }
 
-    // 进度条（处理中显示）
+    // ============ 已选文件列表 ============
+    Column {
+        anchors { fill: parent; margins: 20 }
+        spacing: 8
+        visible: !root.busy && root.files.length > 0
+
+        Row {
+            spacing: 8
+
+            Text {
+                text: "已选择 " + root.files.length + " 个文件"
+                color: root.textColor
+                font.pixelSize: 14
+                font.bold: true
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
+            // 清空按钮
+            Rectangle {
+                width: clearText.width + 16; height: 26; radius: 13
+                color: clearMouse.containsMouse ? (root.themeDark ? "#60ffffff" : "#60000000") : (root.themeDark ? "#30ffffff" : "#30000000")
+                Behavior on color { ColorAnimation { duration: 150 } }
+
+                Text {
+                    id: clearText
+                    anchors.centerIn: parent
+                    text: "清空"
+                    color: root.textSecColor
+                    font.pixelSize: 11
+                }
+                MouseArea {
+                    id: clearMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.files = []
+                }
+            }
+        }
+
+        Text {
+            text: "支持 docx / xlsx / pptx / txt"
+            color: root.textSecColor
+            font.pixelSize: 11
+        }
+
+        ListView {
+            width: parent.width
+            height: parent.height - 60
+            clip: true
+            model: root.files
+            spacing: 4
+
+            delegate: Rectangle {
+                width: parent ? parent.width : 300
+                height: 42
+                radius: 8
+                color: root.themeDark ? "#15ffffff" : "#08000000"
+                border.width: 1
+                border.color: root.themeDark ? "#20ffffff" : "#15000000"
+
+                Row {
+                    anchors { left: parent.left; leftMargin: 12; verticalCenter: parent.verticalCenter }
+                    spacing: 10
+
+                    // 文件图标
+                    Text {
+                        text: {
+                            let ext = modelData.split('.').pop().toLowerCase()
+                            if (ext === "docx") return "📄"
+                            if (ext === "xlsx") return "📊"
+                            if (ext === "pptx") return "📑"
+                            return "📝"
+                        }
+                        font.pixelSize: 16
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    Column {
+                        anchors.verticalCenter: parent.verticalCenter
+                        spacing: 2
+
+                        Text {
+                            text: {
+                                let parts = modelData.split('/')
+                                return parts[parts.length - 1]
+                            }
+                            color: root.textColor
+                            font.pixelSize: 12
+                            font.bold: true
+                        }
+
+                        Text {
+                            text: modelData
+                            color: root.textSecColor
+                            font.pixelSize: 9
+                            elide: Text.ElideMiddle
+                            width: Math.min(implicitWidth, 400)
+                        }
+                    }
+                }
+
+                // 移除按钮
+                Rectangle {
+                    anchors { right: parent.right; rightMargin: 8; verticalCenter: parent.verticalCenter }
+                    width: 22; height: 22; radius: 11
+                    color: removeMouse.containsMouse ? (root.themeDark ? "#60ff5050" : "#60ff3030") : "transparent"
+                    Text {
+                        anchors.centerIn: parent
+                        text: "✕"
+                        color: root.textSecColor
+                        font.pixelSize: 10
+                    }
+                    MouseArea {
+                        id: removeMouse
+                        anchors.fill: parent
+                        hoverEnabled: true
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            let newList = []
+                            for (let i = 0; i < root.files.length; i++) {
+                                if (i !== index) newList.push(root.files[i])
+                            }
+                            root.files = newList
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // ============ 处理中：进度条 ============
     Column {
         anchors.centerIn: parent
         spacing: 15
@@ -106,7 +235,7 @@ Rectangle {
                     GradientStop { position: 0; color: root.progStart }
                     GradientStop { position: 1; color: root.progEnd }
                 }
-                Behavior on width { NumberAnimation { duration: 100 } }
+                Behavior on width { NumberAnimation { duration: 200 } }
             }
         }
 

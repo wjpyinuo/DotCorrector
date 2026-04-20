@@ -9,14 +9,24 @@ Item {
     property color textColor: "white"
     property color bgColor: "#2a2e5a"
 
+    // 设置绑定
+    property bool useDict: true
+    property bool usePycorrector: true
+    property bool useLlm: false
+    property string apiKey: ""
+
     signal back()
+    signal dictToggled(bool value)
+    signal pycorrectorToggled(bool value)
+    signal llmToggled(bool value)
+    signal apiKeyUpdated(string value)
 
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 20
         spacing: 20
 
-        // 返回按钮
+        // 返回按钮 + 标题
         Row {
             spacing: 8
             Layout.fillWidth: true
@@ -50,7 +60,7 @@ Item {
             }
         }
 
-        // 纠错引擎设置
+        // 纠错引擎
         Text {
             text: "纠错引擎"
             color: root.textColor
@@ -58,14 +68,19 @@ Item {
             font.bold: true
         }
 
-        // 本地纠错开关
+        // 本地纠错
         RowLayout {
             Layout.fillWidth: true
             spacing: 12
 
             ToggleSwitch {
-                checked: true
+                id: localToggle
+                checked: root.useDict && root.usePycorrector
                 dark: root.themeDark
+                onCheckedChanged: {
+                    root.dictToggled(checked)
+                    root.pycorrectorToggled(checked)
+                }
             }
             Column {
                 Text { text: "本地纠错（免费）"; color: root.textColor; font.pixelSize: 13; font.bold: true }
@@ -74,15 +89,16 @@ Item {
             Item { Layout.fillWidth: true }
         }
 
-        // AI精校开关
+        // AI 精校
         RowLayout {
             Layout.fillWidth: true
             spacing: 12
 
             ToggleSwitch {
                 id: aiToggle
-                checked: false
+                checked: root.useLlm
                 dark: root.themeDark
+                onCheckedChanged: root.llmToggled(checked)
             }
             Column {
                 Text { text: "AI 精校（需 API Key）"; color: root.textColor; font.pixelSize: 13; font.bold: true }
@@ -91,7 +107,7 @@ Item {
             Item { Layout.fillWidth: true }
         }
 
-        // API Key 输入区
+        // API Key 输入
         ColumnLayout {
             visible: aiToggle.checked
             Layout.fillWidth: true
@@ -122,6 +138,8 @@ Item {
                     font.pixelSize: 12
                     clip: true
                     echoMode: TextInput.Password
+                    text: root.apiKey
+                    onTextChanged: root.apiKeyUpdated(text)
                 }
 
                 Text {
@@ -132,13 +150,6 @@ Item {
                     visible: apiKeyInput.text.length === 0 && !apiKeyInput.activeFocus
                 }
             }
-
-            // 余额显示
-            Row {
-                spacing: 6
-                Text { text: "💰"; font.pixelSize: 12 }
-                Text { text: "余额：-- 元"; color: root.labelColor; font.pixelSize: 11 }
-            }
         }
 
         // 分隔线
@@ -148,7 +159,7 @@ Item {
             color: root.themeDark ? "#30ffffff" : "#20000000"
         }
 
-        // 文件格式设置
+        // 支持格式
         Text {
             text: "支持格式"
             color: root.textColor
@@ -176,6 +187,58 @@ Item {
                         color: root.textColor
                         font.pixelSize: 12
                     }
+                }
+            }
+        }
+
+        // 分隔线
+        Rectangle {
+            Layout.fillWidth: true
+            height: 1
+            color: root.themeDark ? "#30ffffff" : "#20000000"
+        }
+
+        // 纠错流程说明
+        Text {
+            text: "纠错流程"
+            color: root.textColor
+            font.pixelSize: 15
+            font.bold: true
+        }
+
+        Column {
+            Layout.fillWidth: true
+            spacing: 8
+
+            Repeater {
+                model: [
+                    {step: "1", name: "错别字词典", desc: "常见同音字、形近字匹配替换", color: "#50a0ff"},
+                    {step: "2", name: "pycorrector", desc: "基于统计模型的上下文纠错", color: "#ff9040"},
+                    {step: "3", name: "AI 精校", desc: "大模型语义级纠错和润色", color: "#50ff80"}
+                ]
+
+                delegate: RowLayout {
+                    width: parent.width
+                    spacing: 10
+
+                    Rectangle {
+                        width: 24; height: 24; radius: 12
+                        color: modelData.color
+                        Text {
+                            anchors.centerIn: parent
+                            text: modelData.step
+                            color: "white"
+                            font.pixelSize: 12
+                            font.bold: true
+                        }
+                    }
+
+                    Column {
+                        Text { text: modelData.name; color: root.textColor; font.pixelSize: 12; font.bold: true }
+                        Text { text: modelData.desc; color: root.labelColor; font.pixelSize: 10 }
+                    }
+
+                    Item { Layout.fillWidth: true }
                 }
             }
         }

@@ -6,22 +6,22 @@ import App.Backend
 
 Window {
     id: root
-    width: 720
-    height: 480
-    minimumWidth: 600
-    minimumHeight: 400
+    width: 860
+    height: 560
+    minimumWidth: 700
+    minimumHeight: 460
     visible: true
     flags: Qt.FramelessWindowHint | Qt.Window
     color: "transparent"
 
     property var droppedFiles: []
+    property bool showPreview: false
 
     // ============ 主题系统 ============
     QtObject {
         id: theme
         property bool dark: true
 
-        // 深色主题
         property color bgStart: dark ? "#2a2e5a" : "#f0f4ff"
         property color bgEnd: dark ? "#5a2878" : "#e8d0f0"
         property color textPrimary: dark ? "white" : "#1a1a2e"
@@ -31,7 +31,6 @@ Window {
         property color dropZoneBorder: dark ? "#50ffffff" : "#50000000"
         property color dropZoneDragBorder: dark ? "#80e0ff" : "#4090ff"
         property color glowDot: dark ? "#80e0ff" : "#4090ff"
-        property color cardBg: dark ? "transparent" : Qt.rgba(1,1,1,0.6)
         property color winBtnBg: dark ? "#40ffffff" : "#40000000"
         property color winBtnHover: dark ? "#60ffffff" : "#60000000"
         property color closeBtnBg: dark ? "#80ff5050" : "#80ff3030"
@@ -41,7 +40,6 @@ Window {
         property color progressBarEnd: dark ? "#c878ff" : "#8060c0"
         property color settingLabel: dark ? "#c0ffffff" : "#444466"
 
-        // 按钮渐变
         property color btnGradStartNormal: dark ? "#5078c8" : "#4070c0"
         property color btnGradEndNormal: dark ? "#8050c0" : "#7040a0"
         property color btnGradStartHover: dark ? "#80b4ff" : "#6098e0"
@@ -56,10 +54,7 @@ Window {
     Rectangle {
         id: bgCard
         anchors.fill: parent
-        anchors.margins: 0
         radius: 20
-        border.width: 0
-        border.color: theme.borderNormal
 
         Behavior on border.color {
             ColorAnimation { duration: 300; easing.type: Easing.OutCubic }
@@ -82,7 +77,7 @@ Window {
             }
         }
 
-        // ============ StackView 页面切换 ============
+        // ============ 主布局 ============
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 20
@@ -100,7 +95,7 @@ Window {
                 }
                 onToggleTheme: theme.dark = !theme.dark
                 onOpenSettings: {
-                    if (pageStack.depth === 1)
+                    if (pageStack.depth === 1 && !root.showPreview)
                         pageStack.push(settingsPage)
                 }
             }
@@ -181,14 +176,35 @@ Window {
                         labelColor: theme.settingLabel
                         textColor: theme.textPrimary
                         bgColor: theme.bgStart
+
+                        // 绑定后端设置
+                        useDict: backend.useDict
+                        usePycorrector: backend.usePycorrector
+                        useLlm: backend.useLlm
+                        apiKey: backend.apiKey
+
                         onBack: pageStack.pop()
+                        onDictToggled: (v) => backend.useDict = v
+                        onPycorrectorToggled: (v) => backend.usePycorrector = v
+                        onLlmToggled: (v) => backend.useLlm = v
+                        onApiKeyUpdated: (v) => backend.apiKey = v
                     }
                 }
             }
 
+            // 底部按钮行
             RowLayout {
                 Layout.fillWidth: true
                 Item { Layout.fillWidth: true }
+
+                // 状态文本
+                Text {
+                    text: backend.status
+                    color: theme.textSecondary
+                    font.pixelSize: 11
+                    visible: !backend.busy
+                    Layout.rightMargin: 10
+                }
 
                 GlowButton {
                     text: backend.busy ? "处理中..." : "开始纠错"
@@ -202,10 +218,28 @@ Window {
                     borderColorNormal: theme.btnBorderNormal
                     borderColorHover: theme.btnBorderHover
                 }
+
+                GlowButton {
+                    text: "查看结果"
+                    buttonEnabled: !backend.busy && backend.totalChanges >= 0 && backend.resultsJson !== "[]"
+                    onClicked: {
+                        if (pageStack.depth > 1)
+                            pageStack.pop()
+                        root.showPreview = true
+                    }
+                    themeDark: theme.dark
+                    gradStartNormal: theme.btnGradStartNormal
+                    gradEndNormal: theme.btnGradEndNormal
+                    gradStartHover: theme.btnGradStartHover
+                    gradEndHover: theme.btnGradEndHover
+                    borderColorNormal: theme.btnBorderNormal
+                    borderColorHover: theme.btnBorderHover
+                }
+
                 GlowButton {
                     text: "设置"
                     onClicked: {
-                        if (pageStack.depth === 1)
+                        if (pageStack.depth === 1 && !root.showPreview)
                             pageStack.push(settingsPage)
                     }
                     themeDark: theme.dark
@@ -220,10 +254,43 @@ Window {
         }
     }
 
+    // ============ 预览页面覆盖层 ============
+    PreviewPage {
+        id: previewOverlay
+        anchors.fill: parent
+        anchors.margins: 20
+        visible: root.showPreview
+        themeDark: theme.dark
+        textColor: theme.textPrimary
+        labelColor: theme.textSecondary
+        bgColor: theme.bgStart
+        resultsJson: backend.resultsJson
+        totalChanges: backend.totalChanges
+        dictChanges: backend.dictChanges
+        pycChanges: backend.pycChanges
+        llmChanges: backend.llmChanges
+
+        onBack: root.showPreview = false
+        onAcceptChange: (segIndex, changeIndex) => backend.setChangeAccepted(segIndex, changeIndex, true)
+        onRejectChange: (segIndex, changeIndex) => backend.setChangeAccepted(segIndex, changeIndex, false)
+        onAcceptAll: backend.acceptAllChanges(0)
+        onRejectAll: backend.rejectAllChanges(0)
+        onExportClicked: {
+            // 导出到源文件同目录
+            if (root.droppedFiles.length > 0) {
+                let firstFile = root.droppedFiles[0].toString().replace("file:///", "")
+                let dir = firstFile.substring(0, firstFile.lastIndexOf("/"))
+                backend.exportResults(dir)
+            }
+        }
+
+        opacity: root.showPreview ? 1.0 : 0.0
+        Behavior on opacity { NumberAnimation { duration: 300 } }
+    }
+
     // ============ 窗口边缘缩放 ============
     property int edge: 4
 
-    // 左边缘
     MouseArea {
         width: root.edge; anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
         cursorShape: Qt.SizeHorCursor
@@ -237,7 +304,6 @@ Window {
             }
         }
     }
-    // 右边缘
     MouseArea {
         width: root.edge; anchors { right: parent.right; top: parent.top; bottom: parent.bottom }
         cursorShape: Qt.SizeHorCursor
@@ -250,7 +316,6 @@ Window {
             }
         }
     }
-    // 上边缘
     MouseArea {
         height: root.edge; anchors { top: parent.top; left: parent.left; right: parent.right }
         cursorShape: Qt.SizeVerCursor
@@ -264,7 +329,6 @@ Window {
             }
         }
     }
-    // 下边缘
     MouseArea {
         height: root.edge; anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
         cursorShape: Qt.SizeVerCursor
@@ -277,7 +341,6 @@ Window {
             }
         }
     }
-    // 左上角
     MouseArea {
         width: root.edge + 6; height: root.edge + 6; anchors { left: parent.left; top: parent.top }
         cursorShape: Qt.SizeFDiagCursor
@@ -291,7 +354,6 @@ Window {
             }
         }
     }
-    // 右上角
     MouseArea {
         width: root.edge + 6; height: root.edge + 6; anchors { right: parent.right; top: parent.top }
         cursorShape: Qt.SizeBDiagCursor
@@ -306,7 +368,6 @@ Window {
             }
         }
     }
-    // 左下角
     MouseArea {
         width: root.edge + 6; height: root.edge + 6; anchors { left: parent.left; bottom: parent.bottom }
         cursorShape: Qt.SizeBDiagCursor
@@ -321,7 +382,6 @@ Window {
             }
         }
     }
-    // 右下角
     MouseArea {
         width: root.edge + 6; height: root.edge + 6; anchors { right: parent.right; bottom: parent.bottom }
         cursorShape: Qt.SizeFDiagCursor
