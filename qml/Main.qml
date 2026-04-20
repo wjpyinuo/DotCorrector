@@ -95,8 +95,11 @@ Window {
                 }
                 onToggleTheme: theme.dark = !theme.dark
                 onOpenSettings: {
-                    if (pageStack.depth === 1 && !root.showPreview)
+                    if (root.showPreview) {
+                        root.showPreview = false
+                    } else if (pageStack.depth === 1) {
                         pageStack.push(settingsPage)
+                    }
                 }
             }
 
@@ -194,9 +197,10 @@ Window {
                 }
             }
 
-            // 底部按钮行
+            // 底部按钮行（预览时隐藏）
             RowLayout {
                 Layout.fillWidth: true
+                visible: !root.showPreview
                 Item { Layout.fillWidth: true }
 
                 // 状态文本
