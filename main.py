@@ -2,7 +2,8 @@ import sys
 import ctypes
 from pathlib import Path
 from PySide6.QtCore import QUrl, QTimer, Qt
-from PySide6.QtGui import QGuiApplication, QFont
+from PySide6.QtGui import QFont
+from PySide6.QtWidgets import QApplication
 from PySide6.QtQml import QQmlApplicationEngine, qmlRegisterType
 from PySide6.QtQuick import QQuickWindow
 
@@ -23,22 +24,11 @@ def enable_mica(hwnd):
         pass  # 非Win11或失败时静默
 
 
-def enable_acrylic(hwnd):
-    """Win11 Acrylic/亚克力特效"""
-    try:
-        DWMWA_SYSTEMBACKDROP_TYPE = 38
-        DWMSBT_TRANSIENTWINDOW = 3  # Acrylic
-        ctypes.windll.dwmapi.DwmSetWindowAttribute(
-            hwnd, DWMWA_SYSTEMBACKDROP_TYPE,
-            ctypes.byref(ctypes.c_int(DWMSBT_TRANSIENTWINDOW)),
-            ctypes.sizeof(ctypes.c_int)
-        )
-    except Exception:
-        pass
-
-
 if __name__ == "__main__":
-    app = QGuiApplication(sys.argv)
+    # 关键：启用窗口透明背景，让圆角四角穿透到桌面
+    QApplication.setAttribute(Qt.WA_TranslucentBackground)
+
+    app = QApplication(sys.argv)
     app.setFont(QFont("Microsoft YaHei", 9))
 
     qmlRegisterType(Backend, "App.Backend", 1, 0, "Backend")
@@ -52,7 +42,7 @@ if __name__ == "__main__":
 
     root_obj = engine.rootObjects()[0]
 
-    # 启用窗口透明背景（关键：让 QML 透明区域能穿透到桌面）
+    # 设置窗口颜色透明
     if isinstance(root_obj, QQuickWindow):
         root_obj.setColor(Qt.transparent)
 
