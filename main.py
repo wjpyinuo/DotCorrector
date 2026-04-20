@@ -1,9 +1,10 @@
 import sys
 import ctypes
 from pathlib import Path
-from PySide6.QtCore import QUrl, QTimer
-from PySide6.QtGui import QGuiApplication, QFont
+from PySide6.QtCore import QUrl, QTimer, Qt
+from PySide6.QtGui import QGuiApplication, QFont, QColor, QBrush
 from PySide6.QtQml import QQmlApplicationEngine, qmlRegisterType
+from PySide6.QtQuick import QQuickWindow
 
 from backend import Backend
 
@@ -49,9 +50,15 @@ if __name__ == "__main__":
     if not engine.rootObjects():
         sys.exit(-1)
 
+    root_obj = engine.rootObjects()[0]
+
+    # 启用窗口透明背景（关键：让 QML 透明区域能穿透到桌面）
+    if isinstance(root_obj, QQuickWindow):
+        root_obj.setColor(Qt.transparent)
+        root_obj.setBackgroundBrush(QBrush(QColor(0, 0, 0, 0)))
+
     # 应用 Win11 Mica 特效（延迟调用，等窗口完全创建）
     def apply_mica():
-        root_obj = engine.rootObjects()[0]
         hwnd = int(root_obj.winId())
         enable_mica(hwnd)
 
