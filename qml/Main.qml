@@ -15,7 +15,39 @@ Window {
     flags: Qt.FramelessWindowHint | Qt.Window
     color: "transparent"
 
-    property point dragPos: Qt.point(0, 0)
+    // ============ 主题系统 ============
+    QtObject {
+        id: theme
+        property bool dark: true
+
+        // 深色主题
+        property color bgStart: dark ? "#2a2e5a" : "#f0f4ff"
+        property color bgEnd: dark ? "#5a2878" : "#e8d0f0"
+        property color textPrimary: dark ? "white" : "#1a1a2e"
+        property color textSecondary: dark ? "#b0ffffff" : "#666680"
+        property color borderNormal: dark ? Qt.rgba(1,1,1,0.15) : Qt.rgba(0,0,0,0.1)
+        property color borderDrag: dark ? Qt.rgba(0.5,0.9,1.0,1.0) : Qt.rgba(0.3,0.6,1.0,1.0)
+        property color dropZoneBorder: dark ? "#50ffffff" : "#50000000"
+        property color dropZoneDragBorder: dark ? "#80e0ff" : "#4090ff"
+        property color glowDot: dark ? "#80e0ff" : "#4090ff"
+        property color cardBg: dark ? "transparent" : Qt.rgba(1,1,1,0.6)
+        property color winBtnBg: dark ? "#40ffffff" : "#40000000"
+        property color winBtnHover: dark ? "#60ffffff" : "#60000000"
+        property color closeBtnBg: dark ? "#80ff5050" : "#80ff3030"
+        property color closeBtnHover: dark ? "#c8ff3030" : "#ff4040"
+        property color progressBg: dark ? "#30ffffff" : "#30000000"
+        property color progressBarStart: dark ? "#80e0ff" : "#4090ff"
+        property color progressBarEnd: dark ? "#c878ff" : "#8060c0"
+        property color settingLabel: dark ? "#c0ffffff" : "#444466"
+
+        // 按钮渐变
+        property color btnGradStartNormal: dark ? "#5078c8" : "#4070c0"
+        property color btnGradEndNormal: dark ? "#8050c0" : "#7040a0"
+        property color btnGradStartHover: dark ? "#80b4ff" : "#6098e0"
+        property color btnGradEndHover: dark ? "#c878ff" : "#a070d0"
+        property color btnBorderNormal: dark ? "#60ffffff" : "#60000000"
+        property color btnBorderHover: dark ? "#ffffff" : "#202040"
+    }
 
     Backend { id: backend }
 
@@ -25,20 +57,20 @@ Window {
         anchors.fill: parent
         anchors.margins: 15
         radius: 20
+        color: theme.cardBg
         border.width: 1.5
         border.color: fileDropZone.dragging
-            ? Qt.rgba(0.5, 0.9, 1.0, 1.0)
-            : Qt.rgba(1, 1, 1, 0.15)
+            ? theme.borderDrag
+            : theme.borderNormal
 
-        // 边框颜色过渡动画
         Behavior on border.color {
             ColorAnimation { duration: 300; easing.type: Easing.OutCubic }
         }
 
         gradient: Gradient {
             orientation: Gradient.Vertical
-            GradientStop { position: 0.0; color: "#2a2e5a" }
-            GradientStop { position: 1.0; color: "#5a2878" }
+            GradientStop { position: 0.0; color: theme.bgStart }
+            GradientStop { position: 1.0; color: theme.bgEnd }
         }
 
         // 顶部高光
@@ -52,7 +84,7 @@ Window {
             }
         }
 
-        // 外发光（拖入文件时显现）
+        // 外发光
         layer.enabled: true
         layer.effect: MultiEffect {
             shadowEnabled: true
@@ -64,7 +96,7 @@ Window {
             }
         }
 
-        // ============ 内容布局 ============
+        // ============ StackView 页面切换 ============
         ColumnLayout {
             anchors.fill: parent
             anchors.margins: 20
@@ -73,21 +105,84 @@ Window {
             TitleBar {
                 Layout.fillWidth: true
                 title: "✨ 智能错别字纠正"
+                themeDark: theme.dark
                 onMinimize: root.showMinimized()
                 onClose: closeAnim.start()
                 onDragging: (dx, dy) => {
                     root.x += dx
                     root.y += dy
                 }
+                onToggleTheme: theme.dark = !theme.dark
+                onOpenSettings: {
+                    if (pageStack.depth === 1)
+                        pageStack.push(settingsPage)
+                }
             }
 
-            FileDropZone {
-                id: fileDropZone
+            StackView {
+                id: pageStack
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                busy: backend.busy
-                progress: backend.progress
-                status: backend.status
+
+                initialItem: mainPage
+
+                pushEnter: Transition {
+                    PropertyAnimation {
+                        property: "x"
+                        from: pageStack.width; to: 0
+                        duration: 300; easing.type: Easing.OutCubic
+                    }
+                    PropertyAnimation {
+                        property: "opacity"
+                        from: 0; to: 1
+                        duration: 300
+                    }
+                }
+                popExit: Transition {
+                    PropertyAnimation {
+                        property: "x"
+                        from: 0; to: pageStack.width
+                        duration: 300; easing.type: Easing.OutCubic
+                    }
+                    PropertyAnimation {
+                        property: "opacity"
+                        from: 1; to: 0
+                        duration: 300
+                    }
+                }
+
+                Component {
+                    id: mainPage
+                    Item {
+                        FileDropZone {
+                            id: fileDropZone
+                            anchors.fill: parent
+                            busy: backend.busy
+                            progress: backend.progress
+                            status: backend.status
+                            themeDark: theme.dark
+                            zoneBorder: theme.dropZoneBorder
+                            zoneDragBorder: theme.dropZoneDragBorder
+                            textColor: theme.textPrimary
+                            textSecColor: theme.textSecondary
+                            glowColor: theme.glowDot
+                            progBg: theme.progressBg
+                            progStart: theme.progressBarStart
+                            progEnd: theme.progressBarEnd
+                        }
+                    }
+                }
+
+                Component {
+                    id: settingsPage
+                    SettingsPage {
+                        themeDark: theme.dark
+                        labelColor: theme.settingLabel
+                        textColor: theme.textPrimary
+                        bgColor: theme.bgStart
+                        onBack: pageStack.pop()
+                    }
+                }
             }
 
             RowLayout {
@@ -98,8 +193,142 @@ Window {
                     text: backend.busy ? "处理中..." : "开始纠错"
                     buttonEnabled: !backend.busy && fileDropZone.files.length > 0
                     onClicked: backend.startCorrect(fileDropZone.files)
+                    themeDark: theme.dark
+                    gradStartNormal: theme.btnGradStartNormal
+                    gradEndNormal: theme.btnGradEndNormal
+                    gradStartHover: theme.btnGradStartHover
+                    gradEndHover: theme.btnGradEndHover
+                    borderColorNormal: theme.btnBorderNormal
+                    borderColorHover: theme.btnBorderHover
                 }
-                GlowButton { text: "设置" }
+                GlowButton {
+                    text: "设置"
+                    onClicked: {
+                        if (pageStack.depth === 1)
+                            pageStack.push(settingsPage)
+                    }
+                    themeDark: theme.dark
+                    gradStartNormal: theme.btnGradStartNormal
+                    gradEndNormal: theme.btnGradEndNormal
+                    gradStartHover: theme.btnGradStartHover
+                    gradEndHover: theme.btnGradEndHover
+                    borderColorNormal: theme.btnBorderNormal
+                    borderColorHover: theme.btnBorderHover
+                }
+            }
+        }
+    }
+
+    // ============ 窗口边缘缩放 ============
+    // 左边缘
+    MouseArea {
+        width: 6; anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
+        cursorShape: Qt.SizeHorCursor
+        property real startX
+        onPressed: (m) => startX = m.globalX
+        onPositionChanged: (m) => {
+            if (pressed) {
+                let dx = m.globalX - startX
+                root.x += dx; root.width -= dx
+                startX = m.globalX
+            }
+        }
+    }
+    // 右边缘
+    MouseArea {
+        width: 6; anchors { right: parent.right; top: parent.top; bottom: parent.bottom }
+        cursorShape: Qt.SizeHorCursor
+        property real startX
+        onPressed: (m) => startX = m.globalX
+        onPositionChanged: (m) => {
+            if (pressed) {
+                root.width += m.globalX - startX
+                startX = m.globalX
+            }
+        }
+    }
+    // 上边缘
+    MouseArea {
+        height: 6; anchors { top: parent.top; left: parent.left; right: parent.right }
+        cursorShape: Qt.SizeVerCursor
+        property real startY
+        onPressed: (m) => startY = m.globalY
+        onPositionChanged: (m) => {
+            if (pressed) {
+                let dy = m.globalY - startY
+                root.y += dy; root.height -= dy
+                startY = m.globalY
+            }
+        }
+    }
+    // 下边缘
+    MouseArea {
+        height: 6; anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
+        cursorShape: Qt.SizeVerCursor
+        property real startY
+        onPressed: (m) => startY = m.globalY
+        onPositionChanged: (m) => {
+            if (pressed) {
+                root.height += m.globalY - startY
+                startY = m.globalY
+            }
+        }
+    }
+    // 左上角
+    MouseArea {
+        width: 16; height: 16; anchors { left: parent.left; top: parent.top }
+        cursorShape: Qt.SizeFDiagCursor
+        property point start
+        onPressed: (m) => start = Qt.point(m.globalX, m.globalY)
+        onPositionChanged: (m) => {
+            if (pressed) {
+                let dx = m.globalX - start.x; let dy = m.globalY - start.y
+                root.x += dx; root.width -= dx; root.y += dy; root.height -= dy
+                start = Qt.point(m.globalX, m.globalY)
+            }
+        }
+    }
+    // 右上角
+    MouseArea {
+        width: 16; height: 16; anchors { right: parent.right; top: parent.top }
+        cursorShape: Qt.SizeBDiagCursor
+        property point start
+        onPressed: (m) => start = Qt.point(m.globalX, m.globalY)
+        onPositionChanged: (m) => {
+            if (pressed) {
+                root.width += m.globalX - start.x
+                let dy = m.globalY - start.y
+                root.y += dy; root.height -= dy
+                start = Qt.point(m.globalX, m.globalY)
+            }
+        }
+    }
+    // 左下角
+    MouseArea {
+        width: 16; height: 16; anchors { left: parent.left; bottom: parent.bottom }
+        cursorShape: Qt.SizeBDiagCursor
+        property point start
+        onPressed: (m) => start = Qt.point(m.globalX, m.globalY)
+        onPositionChanged: (m) => {
+            if (pressed) {
+                let dx = m.globalX - start.x
+                root.x += dx; root.width -= dx
+                root.height += m.globalY - start.y
+                start = Qt.point(m.globalX, m.globalY)
+            }
+        }
+    }
+    // 右下角
+    MouseArea {
+        width: 16; height: 16; anchors { right: parent.right; bottom: parent.bottom }
+        cursorShape: Qt.SizeFDiagCursor
+        property point start
+        onPressed: (m) => start = Qt.point(m.globalX, m.globalY)
+        onPositionChanged: (m) => {
+            if (pressed) {
+                root.width += m.globalX - start.x
+                root.height += m.globalY - start.y
+                start = Qt.point(m.globalX, m.globalY)
             }
         }
     }

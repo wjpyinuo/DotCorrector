@@ -8,6 +8,7 @@ Rectangle {
     property string text: ""
     property color bgColor: "#30ffffff"
     property color hoverColor: "#60ffffff"
+    property color textColor: "white"
     signal clicked()
 
     Behavior on color { ColorAnimation { duration: 150 } }
@@ -15,7 +16,7 @@ Rectangle {
     Text {
         anchors.centerIn: parent
         text: btn.text
-        color: "white"
+        color: btn.textColor
         font.pixelSize: 12
     }
     MouseArea {

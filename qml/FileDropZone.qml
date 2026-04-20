@@ -6,7 +6,6 @@ Rectangle {
     radius: 15
     color: "transparent"
     border.width: 2
-    border.color: dragging ? "#80e0ff" : "#50ffffff"
 
     property bool dragging: false
     property var files: []
@@ -14,7 +13,18 @@ Rectangle {
     property int progress: 0
     property string status: ""
 
-    // 虚线边框效果（用重复小矩形模拟）
+    // 主题属性
+    property bool themeDark: true
+    property color zoneBorder: "#50ffffff"
+    property color zoneDragBorder: "#80e0ff"
+    property color textColor: "white"
+    property color textSecColor: "#b0ffffff"
+    property color glowColor: "#80e0ff"
+    property color progBg: "#30ffffff"
+    property color progStart: "#80e0ff"
+    property color progEnd: "#c878ff"
+
+    border.color: dragging ? zoneDragBorder : zoneBorder
     Behavior on border.color { ColorAnimation { duration: 200 } }
 
     DropArea {
@@ -46,14 +56,14 @@ Rectangle {
             text: root.files.length > 0
                 ? "已选择 " + root.files.length + " 个文件"
                 : "拖入文件到这里"
-            color: "white"
+            color: root.textColor
             font.pixelSize: 16
             font.bold: true
         }
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
             text: "支持 docx / xlsx / pptx / txt"
-            color: "#b0ffffff"
+            color: root.textSecColor
             font.pixelSize: 12
         }
 
@@ -61,7 +71,7 @@ Rectangle {
         Rectangle {
             anchors.horizontalCenter: parent.horizontalCenter
             width: 10; height: 10; radius: 5
-            color: "#80e0ff"
+            color: root.glowColor
             SequentialAnimation on opacity {
                 loops: Animation.Infinite
                 NumberAnimation { to: 0.2; duration: 800 }
@@ -80,21 +90,21 @@ Rectangle {
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
             text: root.status
-            color: "white"
+            color: root.textColor
             font.pixelSize: 14
         }
 
         Rectangle {
             width: parent.width; height: 6; radius: 3
-            color: "#30ffffff"
+            color: root.progBg
             Rectangle {
                 width: parent.width * (root.progress / 100)
                 height: parent.height
                 radius: 3
                 gradient: Gradient {
                     orientation: Gradient.Horizontal
-                    GradientStop { position: 0; color: "#80e0ff" }
-                    GradientStop { position: 1; color: "#c878ff" }
+                    GradientStop { position: 0; color: root.progStart }
+                    GradientStop { position: 1; color: root.progEnd }
                 }
                 Behavior on width { NumberAnimation { duration: 100 } }
             }
@@ -103,7 +113,7 @@ Rectangle {
         Text {
             anchors.horizontalCenter: parent.horizontalCenter
             text: root.progress + "%"
-            color: "#e0ffffff"
+            color: root.textSecColor
             font.pixelSize: 12
         }
     }

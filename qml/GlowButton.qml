@@ -6,6 +6,16 @@ Rectangle {
 
     property string text: ""
     property bool buttonEnabled: true
+    property bool themeDark: true
+
+    // 主题颜色（外部传入）
+    property color gradStartNormal: "#5078c8"
+    property color gradEndNormal: "#8050c0"
+    property color gradStartHover: "#80b4ff"
+    property color gradEndHover: "#c878ff"
+    property color borderColorNormal: "#60ffffff"
+    property color borderColorHover: "#ffffff"
+
     signal clicked()
 
     opacity: buttonEnabled ? 1.0 : 0.4
@@ -16,18 +26,18 @@ Rectangle {
         orientation: Gradient.Horizontal
         GradientStop {
             position: 0.0
-            color: mouse.containsMouse ? "#80b4ff" : "#5078c8"
+            color: mouse.containsMouse ? btn.gradStartHover : btn.gradStartNormal
             Behavior on color { ColorAnimation { duration: 250 } }
         }
         GradientStop {
             position: 1.0
-            color: mouse.containsMouse ? "#c878ff" : "#8050c0"
+            color: mouse.containsMouse ? btn.gradEndHover : btn.gradEndNormal
             Behavior on color { ColorAnimation { duration: 250 } }
         }
     }
 
     border.width: 1.5
-    border.color: mouse.containsMouse ? "#ffffff" : "#60ffffff"
+    border.color: mouse.containsMouse ? btn.borderColorHover : btn.borderColorNormal
     Behavior on border.color { ColorAnimation { duration: 250 } }
 
     Text {
