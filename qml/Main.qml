@@ -58,9 +58,7 @@ Window {
         anchors.margins: 0
         radius: 20
         border.width: 0
-        border.color: fileDropZone.dragging
-            ? theme.borderDrag
-            : theme.borderNormal
+        border.color: theme.borderNormal
 
         Behavior on border.color {
             ColorAnimation { duration: 300; easing.type: Easing.OutCubic }
