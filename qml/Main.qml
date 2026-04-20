@@ -103,7 +103,7 @@ Window {
 
             TitleBar {
                 Layout.fillWidth: true
-                title: "✨ 智能错别字纠正"
+                title: "墨正 DotCorrector"
                 themeDark: theme.dark
                 onMinimize: root.showMinimized()
                 onClose: closeAnim.start()
