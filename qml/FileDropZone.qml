@@ -48,7 +48,8 @@ Rectangle {
     // ============ 待机状态：空 ============
     Column {
         anchors.centerIn: parent
-        spacing: 12
+        anchors.verticalCenterOffset: -12
+        spacing: 14
         visible: !root.busy && root.files.length === 0
 
         Text {
@@ -133,7 +134,7 @@ Rectangle {
 
             delegate: Rectangle {
                 width: parent ? parent.width : 300
-                height: 42
+                height: 46
                 radius: 8
                 color: root.themeDark ? "#15ffffff" : "#08000000"
                 border.width: 1

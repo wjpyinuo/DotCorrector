@@ -80,7 +80,10 @@ Window {
         // ============ 主布局 ============
         ColumnLayout {
             anchors.fill: parent
-            anchors.margins: 20
+            anchors.leftMargin: 20
+            anchors.topMargin: 20
+            anchors.rightMargin: 20
+            anchors.bottomMargin: 28
             spacing: 15
 
             TitleBar {
@@ -200,8 +203,9 @@ Window {
             // 底部按钮行（预览时隐藏）
             RowLayout {
                 Layout.fillWidth: true
+                Layout.minimumHeight: 42
                 visible: !root.showPreview
-                Item { Layout.fillWidth: true }
+                spacing: 10
 
                 // 状态文本
                 Text {
@@ -209,13 +213,17 @@ Window {
                     color: theme.textSecondary
                     font.pixelSize: 11
                     visible: !backend.busy
-                    Layout.rightMargin: 10
+                    Layout.leftMargin: 4
                 }
 
+                Item { Layout.fillWidth: true }
+
                 GlowButton {
-                    text: backend.busy ? "处理中..." : "开始纠错"
-                    buttonEnabled: !backend.busy && root.droppedFiles.length > 0
-                    onClicked: backend.startCorrect(root.droppedFiles)
+                    text: "设置"
+                    onClicked: {
+                        if (pageStack.depth === 1 && !root.showPreview)
+                            pageStack.push(settingsPage)
+                    }
                     themeDark: theme.dark
                     gradStartNormal: theme.btnGradStartNormal
                     gradEndNormal: theme.btnGradEndNormal
@@ -243,11 +251,9 @@ Window {
                 }
 
                 GlowButton {
-                    text: "设置"
-                    onClicked: {
-                        if (pageStack.depth === 1 && !root.showPreview)
-                            pageStack.push(settingsPage)
-                    }
+                    text: backend.busy ? "处理中..." : "开始纠错"
+                    buttonEnabled: !backend.busy && root.droppedFiles.length > 0
+                    onClicked: backend.startCorrect(root.droppedFiles)
                     themeDark: theme.dark
                     gradStartNormal: theme.btnGradStartNormal
                     gradEndNormal: theme.btnGradEndNormal

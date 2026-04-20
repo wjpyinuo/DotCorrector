@@ -3,7 +3,7 @@ import QtQuick.Layouts
 
 Item {
     id: bar
-    height: 36
+    height: 40
 
     property string title: ""
     property bool themeDark: true
@@ -24,7 +24,7 @@ Item {
 
     RowLayout {
         anchors.fill: parent
-        spacing: 8
+        spacing: 6
 
         Text {
             text: bar.title

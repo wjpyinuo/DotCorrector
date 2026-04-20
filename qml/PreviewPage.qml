@@ -32,11 +32,11 @@ Item {
     RowLayout {
         id: topBar
         anchors { top: parent.top; left: parent.left; right: parent.right }
-        height: 36
+        height: 40
         spacing: 12
 
         Rectangle {
-            width: 60; height: 28; radius: 14
+            width: 72; height: 30; radius: 15
             color: backMouse.containsMouse ? (root.themeDark ? "#60ffffff" : "#60000000") : (root.themeDark ? "#30ffffff" : "#30000000")
             Text {
                 anchors.centerIn: parent
@@ -379,8 +379,8 @@ Item {
     // ============ 底栏 ============
     RowLayout {
         id: bottomBar
-        anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
-        height: 40
+        anchors { bottom: parent.bottom; bottomMargin: 4; left: parent.left; right: parent.right }
+        height: 42
         spacing: 10
 
         // 全部接受

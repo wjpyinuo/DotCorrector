@@ -2,7 +2,7 @@ import QtQuick
 
 Rectangle {
     id: btn
-    width: 120; height: 40; radius: 20
+    width: 110; height: 38; radius: 19
 
     property string text: ""
     property bool buttonEnabled: true

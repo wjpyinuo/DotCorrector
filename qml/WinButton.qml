@@ -2,7 +2,7 @@ import QtQuick
 
 Rectangle {
     id: btn
-    width: 28; height: 28; radius: 14
+    width: 30; height: 30; radius: 15
     color: mouse.containsMouse ? hoverColor : bgColor
 
     property string text: ""

@@ -42,7 +42,7 @@ Item {
                 Layout.bottomMargin: 4
 
                 Rectangle {
-                    width: 60; height: 28; radius: 14
+                    width: 72; height: 30; radius: 15
                     color: backMouse.containsMouse ? (root.themeDark ? "#60ffffff" : "#60000000") : (root.themeDark ? "#30ffffff" : "#30000000")
                     Behavior on color { ColorAnimation { duration: 150 } }
 
