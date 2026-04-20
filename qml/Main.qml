@@ -221,7 +221,7 @@ Window {
 
                 GlowButton {
                     text: "查看结果"
-                    buttonEnabled: !backend.busy && backend.totalChanges >= 0 && backend.resultsJson !== "[]"
+                    buttonEnabled: !backend.busy && backend.resultsJson !== "[]"
                     onClicked: {
                         if (pageStack.depth > 1)
                             pageStack.pop()

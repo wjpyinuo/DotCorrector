@@ -5,12 +5,11 @@ DotCorrector Backend
 
 import os
 import json
-import copy
 import re
 from pathlib import Path
-from typing import List, Dict, Optional
+from typing import List, Dict
 
-from PySide6.QtCore import QObject, Signal, Slot, Property, QThread, QTimer
+from PySide6.QtCore import QObject, Signal, Slot, Property, QThread
 
 
 # ============================================================
@@ -19,7 +18,6 @@ from PySide6.QtCore import QObject, Signal, Slot, Property, QThread, QTimer
 
 # 常见同音字 / 形近字对照  (wrong → right)
 TYPO_DICT: Dict[str, str] = {
-    "的地得": "的地得",  # placeholder — handled by context rules
     "在坐": "在座",
     "在次": "再次",
     "在说": "再说",
@@ -48,13 +46,10 @@ TYPO_DICT: Dict[str, str] = {
     "偶象": "偶像",
     "印像": "印象",
     "想向": "想象",
-    "想像": "想象",
     "成份": "成分",
     "分额": "份额",
     "即然": "既然",
-    "即使": "即使",
     "既使": "即使",
-    "既然": "既然",
     "既便": "即便",
     "记的": "记得",
     "觉的": "觉得",
@@ -68,18 +63,14 @@ TYPO_DICT: Dict[str, str] = {
     "听的到": "听得到",
     "变的": "变得",
     "说的": "说得",
-    "做得到": "做得到",
     "地确": "的确",
     "必竟": "毕竟",
     "竟争": "竞争",
     "竞然": "竟然",
     "决对": "绝对",
-    "决心": "决心",
-    "绝无": "绝无",
     "因该": "应该",
     "应响": "影响",
     "影起": "引起",
-    "反映意见": "反应意见",
     "反咉": "反映",
     "及于": "基于",
     "基与": "基于",
@@ -90,20 +81,16 @@ TYPO_DICT: Dict[str, str] = {
     "发杨": "发扬",
     "发奋": "发愤",
     "幅射": "辐射",
-    "幅员": "幅员",
     "复盖": "覆盖",
-    "恢复": "恢复",
     "破斧沉舟": "破釜沉舟",
     "一诺千斤": "一诺千金",
     "一股作气": "一鼓作气",
     "悬梁刺骨": "悬梁刺股",
-    "再接再励": "再接再厉",
     "默守成规": "墨守成规",
     "穿流不息": "川流不息",
     "迫不急待": "迫不及待",
     "谈笑风声": "谈笑风生",
     "人才倍出": "人才辈出",
-    "委屈求全": "委曲求全",
     "直接了当": "直截了当",
     "走头无路": "走投无路",
     "出人投地": "出人头地",
@@ -112,7 +99,6 @@ TYPO_DICT: Dict[str, str] = {
     "按步就班": "按部就班",
     "责无旁代": "责无旁贷",
     "如法泡制": "如法炮制",
-    "百无聊赖": "百无聊赖",
     "变本加利": "变本加厉",
     "不可思义": "不可思议",
     "不加思索": "不假思索",
@@ -134,7 +120,6 @@ TYPO_DICT: Dict[str, str] = {
     "汗流夹背": "汗流浃背",
     "好高鹜远": "好高骛远",
     "和霭可亲": "和蔼可亲",
-    "侯门似海": "侯门似海",
     "虎视耽耽": "虎视眈眈",
     "慌慌不安": "惶惶不安",
     "黄梁一梦": "黄粱一梦",
@@ -172,7 +157,6 @@ TYPO_DICT: Dict[str, str] = {
     "弄巧成绌": "弄巧成拙",
     "旁证博引": "旁征博引",
     "披星带月": "披星戴月",
-    "迫不急待": "迫不及待",
     "破锭百出": "破绽百出",
     "气极败坏": "气急败坏",
     "前扑后继": "前赴后继",
@@ -191,7 +175,6 @@ TYPO_DICT: Dict[str, str] = {
     "身名狼藉": "声名狼藉",
     "深符众望": "深孚众望",
     "生灵图碳": "生灵涂炭",
-    "声东击西": "声东击西",
     "拾人牙惠": "拾人牙慧",
     "食不裹腹": "食不果腹",
     "史无前列": "史无前例",
@@ -210,7 +193,6 @@ TYPO_DICT: Dict[str, str] = {
     "万马齐暗": "万马齐喑",
     "妄自非薄": "妄自菲薄",
     "微言精义": "微言大义",
-    "委曲求全": "委曲求全",
     "尾尾动听": "娓娓动听",
     "未雨绸谬": "未雨绸缪",
     "温文而雅": "温文尔雅",
@@ -218,7 +200,6 @@ TYPO_DICT: Dict[str, str] = {
     "无精打彩": "无精打采",
     "无所是从": "无所适从",
     "无忘之灾": "无妄之灾",
-    "息息相关": "息息相关",
     "洗耳躬听": "洗耳恭听",
     "喜笑眼开": "喜笑颜开",
     "瑕不掩玉": "瑕不掩瑜",
@@ -255,8 +236,6 @@ TYPO_DICT: Dict[str, str] = {
     "怨天犹人": "怨天尤人",
     "越俎代疱": "越俎代庖",
     "运筹维幄": "运筹帷幄",
-    "再接再励": "再接再厉",
-    "责无旁代": "责无旁贷",
     "沾轻怕重": "拈轻怕重",
     "斩钉接铁": "斩钉截铁",
     "仗义直言": "仗义执言",
@@ -264,7 +243,6 @@ TYPO_DICT: Dict[str, str] = {
     "针贬时弊": "针砭时弊",
     "真知卓见": "真知灼见",
     "振聋发馈": "振聋发聩",
-    "直接了当": "直截了当",
     "指高气扬": "趾高气扬",
     "置若网闻": "置若罔闻",
     "中流抵柱": "中流砥柱",
@@ -275,25 +253,21 @@ TYPO_DICT: Dict[str, str] = {
     "捉襟见胄": "捉襟见肘",
     "自抱自弃": "自暴自弃",
     "自名得意": "自鸣得意",
-    "走头无路": "走投无路",
     "坐地分脏": "坐地分赃",
     "坐想其成": "坐享其成",
 }
 
-# 短语替换（按长度降序匹配，避免部分匹配冲突）
-_PHRASE_SORTED = sorted(TYPO_DICT.items(), key=lambda kv: len(kv[0]), reverse=True)
-
-
-def dict_correct(text: str) -> List[Dict]:
-    """第一遍：词典纠错，返回改动列表"""
-    changes = []
-    for wrong, right in _PHRASE_SORTED:
+def dict_correct(text: str) -> tuple:
+    """第一遍：词典纠错，返回 (changes, corrected_text)"""
+    # 收集所有匹配
+    matches = []
+    for wrong, right in TYPO_DICT.items():
         start = 0
         while True:
             idx = text.find(wrong, start)
             if idx == -1:
                 break
-            changes.append({
+            matches.append({
                 "original": wrong,
                 "corrected": right,
                 "position": idx,
@@ -302,10 +276,31 @@ def dict_correct(text: str) -> List[Dict]:
                 "accepted": True,
             })
             start = idx + len(wrong)
-    # 从后往前替换，保持位置正确
-    for ch in reversed(changes):
-        text = text[:ch["position"]] + ch["corrected"] + text[ch["position"] + len(ch["original"]):]
-    return changes, text
+
+    if not matches:
+        return [], text
+
+    # 按位置正序、长词优先排序，去重重叠
+    matches.sort(key=lambda m: (m["position"], -len(m["original"])))
+    seen = set()
+    unique = []
+    for m in matches:
+        key = (m["position"], m["original"])
+        if key not in seen:
+            seen.add(key)
+            unique.append(m)
+
+    # 正序替换 + offset 追踪，确保位置准确
+    result, corrected = [], text
+    offset = 0
+    for m in unique:
+        adj_pos = m["position"] + offset
+        orig = m["original"]
+        if adj_pos + len(orig) <= len(corrected) and corrected[adj_pos:adj_pos + len(orig)] == orig:
+            corrected = corrected[:adj_pos] + m["corrected"] + corrected[adj_pos + len(orig):]
+            result.append({**m, "position": adj_pos})
+            offset += len(m["corrected"]) - len(orig)
+    return result, corrected
 
 
 # ============================================================
@@ -520,7 +515,9 @@ def export_corrected_file(segments: List[Dict], file_type: str, output_path: str
     """导出修正后的文件"""
     if file_type == "txt":
         with open(output_path, "w", encoding="utf-8") as f:
-            for seg in segments:
+            for i, seg in enumerate(segments):
+                if i > 0:
+                    f.write("\n\n")
                 f.write(seg["corrected_text"])
 
     elif file_type == "docx":
