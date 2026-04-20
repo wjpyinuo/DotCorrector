@@ -78,17 +78,17 @@ Window {
             }
         }
 
-        // ============ 主布局 ============
-        ColumnLayout {
-            anchors.fill: parent
-            anchors.leftMargin: 20
-            anchors.topMargin: 20
-            anchors.rightMargin: 20
-            anchors.bottomMargin: 28
-            spacing: 15
+        // ============ 主布局（绝对定位，避免约束求解问题）============
+        Item {
+            id: mainLayout
+            x: 20; y: 20
+            width: parent.width - 40
+            height: parent.height - 48
 
             TitleBar {
-                Layout.fillWidth: true
+                id: titleBar
+                x: 0; y: 0
+                width: parent.width
                 title: "墨正 DotCorrector"
                 themeDark: theme.dark
                 pinned: root.pinned
@@ -118,8 +118,10 @@ Window {
 
             StackView {
                 id: pageStack
-                Layout.fillWidth: true
-                Layout.fillHeight: true
+                x: 0
+                y: titleBar.height + 15
+                width: parent.width
+                height: parent.height - titleBar.height - bottomBar.height - 30
 
                 initialItem: mainPage
 
@@ -211,67 +213,75 @@ Window {
                 }
             }
 
-            // 底部按钮行（预览时隐藏）
-            RowLayout {
-                Layout.fillWidth: true
-                Layout.minimumHeight: 42
+            // 底部按钮行（绝对定位）
+            Item {
+                id: bottomBar
+                x: 0
+                y: parent.height - height
+                width: parent.width
+                height: 42
                 visible: !root.showPreview
-                spacing: 10
 
                 // 状态文本
                 Text {
+                    x: 4
+                    anchors.verticalCenter: parent.verticalCenter
                     text: backend.status
                     color: theme.textSecondary
                     font.pixelSize: 11
                     visible: !backend.busy
-                    Layout.leftMargin: 4
                 }
 
-                Item { Layout.fillWidth: true }
+                // 右侧按钮
+                Row {
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    spacing: 8
 
-                GlowButton {
-                    text: "设置"
-                    onClicked: {
-                        if (pageStack.depth === 1 && !root.showPreview)
-                            pageStack.push(settingsPage)
+                    GlowButton {
+                        text: "设置"
+                        onClicked: {
+                            if (pageStack.depth === 1 && !root.showPreview)
+                                pageStack.push(settingsPage)
+                        }
+                        themeDark: theme.dark
+                        gradStartNormal: theme.btnGradStartNormal
+                        gradEndNormal: theme.btnGradEndNormal
+                        gradStartHover: theme.btnGradStartHover
+                        gradEndHover: theme.btnGradEndHover
+                        borderColorNormal: theme.btnBorderNormal
+                        borderColorHover: theme.btnBorderHover
                     }
-                    themeDark: theme.dark
-                    gradStartNormal: theme.btnGradStartNormal
-                    gradEndNormal: theme.btnGradEndNormal
-                    gradStartHover: theme.btnGradStartHover
-                    gradEndHover: theme.btnGradEndHover
-                    borderColorNormal: theme.btnBorderNormal
-                    borderColorHover: theme.btnBorderHover
-                }
 
-                GlowButton {
-                    text: "查看结果"
-                    buttonEnabled: !backend.busy && backend.resultsJson !== "[]"
-                    onClicked: {
-                        if (pageStack.depth > 1)
-                            pageStack.pop()
-                        root.showPreview = true
+                    GlowButton {
+                        text: "查看结果"
+                        buttonEnabled: !backend.busy && backend.resultsJson !== "[]"
+                        onClicked: {
+                            if (pageStack.depth > 1)
+                                pageStack.pop()
+                            root.showPreview = true
+                        }
+                        themeDark: theme.dark
+                        gradStartNormal: theme.btnGradStartNormal
+                        gradEndNormal: theme.btnGradEndNormal
+                        gradStartHover: theme.btnGradStartHover
+                        gradEndHover: theme.btnGradEndHover
+                        borderColorNormal: theme.btnBorderNormal
+                        borderColorHover: theme.btnBorderHover
                     }
-                    themeDark: theme.dark
-                    gradStartNormal: theme.btnGradStartNormal
-                    gradEndNormal: theme.btnGradEndNormal
-                    gradStartHover: theme.btnGradStartHover
-                    gradEndHover: theme.btnGradEndHover
-                    borderColorNormal: theme.btnBorderNormal
-                    borderColorHover: theme.btnBorderHover
-                }
 
-                GlowButton {
-                    text: backend.busy ? "处理中..." : "开始纠错"
-                    buttonEnabled: !backend.busy && root.droppedFiles.length > 0
-                    onClicked: backend.startCorrect(root.droppedFiles)
-                    themeDark: theme.dark
-                    gradStartNormal: theme.btnGradStartNormal
-                    gradEndNormal: theme.btnGradEndNormal
-                    gradStartHover: theme.btnGradStartHover
-                    gradEndHover: theme.btnGradEndHover
-                    borderColorNormal: theme.btnBorderNormal
-                    borderColorHover: theme.btnBorderHover
+                    GlowButton {
+                        text: backend.busy ? "处理中..." : "开始纠错"
+                        buttonEnabled: !backend.busy && root.droppedFiles.length > 0
+                        onClicked: backend.startCorrect(root.droppedFiles)
+                        themeDark: theme.dark
+                        gradStartNormal: theme.btnGradStartNormal
+                        gradEndNormal: theme.btnGradEndNormal
+                        gradStartHover: theme.btnGradStartHover
+                        gradEndHover: theme.btnGradEndHover
+                        borderColorNormal: theme.btnBorderNormal
+                        borderColorHover: theme.btnBorderHover
+                    }
                 }
             }
         }
