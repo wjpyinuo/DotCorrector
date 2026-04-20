@@ -374,7 +374,8 @@ LLM_PROMPT = """你是一个中文文本纠错专家。请仔细检查以下文�
 """
 
 
-def llm_correct(text: str, api_key: str, api_base: str = "https://api.mimo.ai/v1") -> tuple:
+def llm_correct(text: str, api_key: str, api_base: str = "https://api.mimo.ai/v1",
+                provider: str = "mimo") -> tuple:
     """第三遍：大模型 API 精校"""
     if not api_key:
         return [], text
@@ -383,6 +384,8 @@ def llm_correct(text: str, api_key: str, api_base: str = "https://api.mimo.ai/v1
         import requests
     except ImportError:
         return [], text
+
+    model_name = "mimo-v2-pro" if provider == "mimo" else "deepseek-chat"
 
     # 长文本分段（每段最多 2000 字）
     chunk_size = 2000
@@ -402,7 +405,7 @@ def llm_correct(text: str, api_key: str, api_base: str = "https://api.mimo.ai/v1
                     "Content-Type": "application/json",
                 },
                 json={
-                    "model": "mimo-v2-pro",
+                    "model": model_name,
                     "messages": [
                         {"role": "system", "content": "你是中文文本纠错专家。"},
                         {"role": "user", "content": LLM_PROMPT.format(text=chunk)},
@@ -572,7 +575,7 @@ class CorrectWorker(QThread):
     finished_result = Signal(list)  # all segments with results
 
     def __init__(self, files: list, use_dict=True, use_pycorrector=True, use_llm=False,
-                 api_key="", api_base="https://api.mimo.ai/v1"):
+                 api_key="", api_base="https://api.mimo.ai/v1", provider="mimo"):
         super().__init__()
         self.files = files
         self.use_dict = use_dict
@@ -580,6 +583,7 @@ class CorrectWorker(QThread):
         self.use_llm = use_llm
         self.api_key = api_key
         self.api_base = api_base
+        self.provider = provider
 
     def run(self):
         all_results = []
@@ -614,7 +618,7 @@ class CorrectWorker(QThread):
                 # 第三遍：大模型
                 if self.use_llm and self.api_key:
                     self.statusChanged.emit(f"[{fi+1}/{len(self.files)}] AI 精校... ({si+1}/{total_segs})")
-                    llm_changes, current_text = llm_correct(current_text, self.api_key, self.api_base)
+                    llm_changes, current_text = llm_correct(current_text, self.api_key, self.api_base, self.provider)
                     all_changes.extend(llm_changes)
 
                 result = {
@@ -665,7 +669,13 @@ class Backend(QObject):
         self._use_pycorrector = True
         self._use_llm = False
         self._api_key = ""
+        self._api_provider = "mimo"
         self._api_base = "https://api.mimo.ai/v1"
+
+        self._API_ENDPOINTS = {
+            "mimo": "https://api.mimo.ai/v1",
+            "deepseek": "https://api.deepseek.com/v1",
+        }
 
     # ---- progress ----
     def _get_progress(self):
@@ -785,14 +795,16 @@ class Backend(QObject):
 
     apiKey = Property(str, _get_api_key, _set_api_key, notify=settingsChanged)
 
-    def _get_api_base(self):
-        return self._api_base
+    def _get_api_provider(self):
+        return self._api_provider
 
-    def _set_api_base(self, v):
-        self._api_base = v
-        self.settingsChanged.emit()
+    def _set_api_provider(self, v):
+        if self._api_provider != v:
+            self._api_provider = v
+            self._api_base = self._API_ENDPOINTS.get(v, self._api_base)
+            self.settingsChanged.emit()
 
-    apiBase = Property(str, _get_api_base, _set_api_base, notify=settingsChanged)
+    apiProvider = Property(str, _get_api_provider, _set_api_provider, notify=settingsChanged)
 
     # ---- QML 可调用方法 ----
 
@@ -828,6 +840,7 @@ class Backend(QObject):
             use_llm=self._use_llm,
             api_key=self._api_key,
             api_base=self._api_base,
+            provider=self._api_provider,
         )
         self._worker.progressChanged.connect(self._set_progress)
         self._worker.statusChanged.connect(self._set_status)
