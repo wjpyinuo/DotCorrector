@@ -15,6 +15,7 @@ Item {
     property bool useLlm: false
     property string apiKey: ""
     property string apiProvider: "mimo"
+    property string apiBase: ""
 
     signal back()
     signal dictToggled(bool value)
@@ -22,6 +23,7 @@ Item {
     signal llmToggled(bool value)
     signal apiKeyUpdated(string value)
     signal apiProviderUpdated(string value)
+    signal apiBaseUpdated(string value)
 
     Flickable {
         id: flick
@@ -79,23 +81,38 @@ Item {
                 Layout.bottomMargin: -4
             }
 
-            // 本地纠错
+            // 本地纠错 - 词典
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 12
 
                 ToggleSwitch {
-                    id: localToggle
-                    checked: root.useDict && root.usePycorrector
+                    id: dictToggle
+                    checked: root.useDict
                     dark: root.themeDark
-                    onCheckedChanged: {
-                        root.dictToggled(checked)
-                        root.pycorrectorToggled(checked)
-                    }
+                    onCheckedChanged: root.dictToggled(checked)
                 }
                 Column {
-                    Text { text: "本地纠错（免费）"; color: root.textColor; font.pixelSize: 13; font.bold: true }
-                    Text { text: "错别字词典 + pycorrector，无需联网"; color: root.labelColor; font.pixelSize: 11 }
+                    Text { text: "错别字词典"; color: root.textColor; font.pixelSize: 13; font.bold: true }
+                    Text { text: "200+ 常见同音字、形近字匹配，极快"; color: root.labelColor; font.pixelSize: 11 }
+                }
+                Item { Layout.fillWidth: true }
+            }
+
+            // 本地纠错 - pycorrector
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 12
+
+                ToggleSwitch {
+                    id: pycToggle
+                    checked: root.usePycorrector
+                    dark: root.themeDark
+                    onCheckedChanged: root.pycorrectorToggled(checked)
+                }
+                Column {
+                    Text { text: "pycorrector 统计模型"; color: root.textColor; font.pixelSize: 13; font.bold: true }
+                    Text { text: "上下文语法纠错，无需联网"; color: root.labelColor; font.pixelSize: 11 }
                 }
                 Item { Layout.fillWidth: true }
             }
@@ -254,13 +271,44 @@ Item {
                     }
                 }
 
-                // API 地址提示
+                // API 地址（可自定义）
                 Text {
-                    text: root.apiProvider === "mimo"
-                        ? "默认地址: api.mimo.ai/v1"
-                        : "默认地址: api.deepseek.com/v1"
+                    text: "API Base URL"
                     color: root.labelColor
-                    font.pixelSize: 10
+                    font.pixelSize: 12
+                    font.bold: true
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    height: 36
+                    radius: 8
+                    color: root.themeDark ? "#40ffffff" : "#40000000"
+                    border.width: 1
+                    border.color: root.themeDark ? "#60ffffff" : "#40000000"
+
+                    TextInput {
+                        id: apiBaseInput
+                        anchors.fill: parent
+                        anchors.leftMargin: 12
+                        anchors.rightMargin: 12
+                        verticalAlignment: TextInput.AlignVCenter
+                        color: root.textColor
+                        font.pixelSize: 12
+                        clip: true
+                        text: root.apiBase
+                        onTextChanged: root.apiBaseUpdated(text)
+                    }
+
+                    Text {
+                        anchors { left: parent.left; leftMargin: 12; verticalCenter: parent.verticalCenter }
+                        text: root.apiProvider === "mimo"
+                            ? "https://api.mimo.ai/v1"
+                            : "https://api.deepseek.com/v1"
+                        color: root.themeDark ? "#60ffffff" : "#60000000"
+                        font.pixelSize: 12
+                        visible: apiBaseInput.text.length === 0 && !apiBaseInput.activeFocus
+                    }
                 }
             }
 

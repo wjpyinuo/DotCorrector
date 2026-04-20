@@ -201,6 +201,7 @@ Window {
                         useLlm: backend.useLlm
                         apiKey: backend.apiKey
                         apiProvider: backend.apiProvider
+                        apiBase: backend.apiBase
 
                         onBack: pageStack.pop()
                         onDictToggled: (v) => backend.useDict = v
@@ -208,6 +209,7 @@ Window {
                         onLlmToggled: (v) => backend.useLlm = v
                         onApiKeyUpdated: (v) => backend.apiKey = v
                         onApiProviderUpdated: (v) => backend.apiProvider = v
+                        onApiBaseUpdated: (v) => backend.apiBase = v
                     }
                 }
             }

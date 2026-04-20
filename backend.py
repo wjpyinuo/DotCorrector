@@ -8,8 +8,25 @@ import json
 import re
 from pathlib import Path
 from typing import List, Dict
+from urllib.parse import unquote
 
 from PySide6.QtCore import QObject, Signal, Slot, Property, QThread
+
+
+def _safe_path(raw: str) -> str:
+    """将 file:/// URL 或普通路径转为系统路径，处理 URL 编码和平台差异"""
+    p = str(raw)
+    if p.startswith("file:///"):
+        # p[8]=':', p[9]='/' → Windows drive letter path (e.g. file:///C:/...)
+        #  → strip "file:///" (8 chars) → "C:/..."
+        # Otherwise Unix absolute path → strip "file://" (7 chars) → "/..."
+        if len(p) > 9 and p[8] != '/' and p[9] in (':', '/'):
+            p = p[8:]
+        else:
+            p = p[7:]
+    elif p.startswith("file://"):
+        p = p[7:]  # file://host/path → /path
+    return unquote(p)
 
 
 # ============================================================
@@ -259,6 +276,24 @@ TYPO_DICT: Dict[str, str] = {
 
 def dict_correct(text: str) -> tuple:
     """第一遍：词典纠错，返回 (changes, corrected_text)"""
+
+    def _is_safe_match(pos: int, length: int) -> bool:
+        """检查匹配是否安全（避免子串误报）。
+        4字以上的成语/短语几乎不会误报，直接通过。
+        2-3字短词：仅检查是否是某个更长词典键的前缀（如"刻划"是否是"刻划XX"的前缀）。
+        """
+        if length >= 4:
+            return True
+        end = pos + length
+        # 仅检查匹配+后面1个字是否构成更长的词典键（前缀检查）
+        if end < len(text):
+            for extra in range(1, 3):
+                if end + extra <= len(text):
+                    longer = text[pos:end + extra]
+                    if longer in TYPO_DICT:
+                        return False
+        return True
+
     # 收集所有匹配
     matches = []
     for wrong, right in TYPO_DICT.items():
@@ -267,14 +302,15 @@ def dict_correct(text: str) -> tuple:
             idx = text.find(wrong, start)
             if idx == -1:
                 break
-            matches.append({
-                "original": wrong,
-                "corrected": right,
-                "position": idx,
-                "pass_name": "词典",
-                "pass_index": 1,
-                "accepted": True,
-            })
+            if _is_safe_match(idx, len(wrong)):
+                matches.append({
+                    "original": wrong,
+                    "corrected": right,
+                    "position": idx,
+                    "pass_name": "词典",
+                    "pass_index": 1,
+                    "accepted": True,
+                })
             start = idx + len(wrong)
 
     if not matches:
@@ -421,11 +457,33 @@ def llm_correct(text: str, api_key: str, api_base: str = "https://api.mimo.ai/v1
             data = resp.json()
             content = data["choices"][0]["message"]["content"].strip()
 
-            # 清理可能的 markdown 代码块
-            content = re.sub(r"```json\s*", "", content)
+            # 清理 markdown 代码块（```json ... ``` 或 ``` ... ```）
+            content = re.sub(r"```(?:json)?\s*", "", content)
             content = re.sub(r"```\s*$", "", content)
+            content = content.strip()
 
-            result = json.loads(content)
+            # 安全解析 JSON：优先直接 parse，失败则提取外层 {...}
+            result = None
+            try:
+                result = json.loads(content)
+            except (json.JSONDecodeError, ValueError):
+                # 从混合文本中提取最外层 JSON 对象
+                brace_start = content.find("{")
+                if brace_start != -1:
+                    depth = 0
+                    for ci in range(brace_start, len(content)):
+                        if content[ci] == "{":
+                            depth += 1
+                        elif content[ci] == "}":
+                            depth -= 1
+                            if depth == 0:
+                                try:
+                                    result = json.loads(content[brace_start:ci + 1])
+                                except (json.JSONDecodeError, ValueError):
+                                    pass
+                                break
+            if result is None:
+                continue
             corrections = result.get("corrections", [])
 
             # 按位置降序替换
@@ -484,7 +542,7 @@ def extract_text_from_file(filepath: str) -> tuple:
         segments = []
         for para in doc.paragraphs:
             if para.text.strip():
-                segments.append({"text": para.text, "ref": para})
+                segments.append({"text": para.text, "ref": para, "ref_text": para.text})
         return segments, "docx"
 
     elif ext == ".xlsx":
@@ -495,7 +553,7 @@ def extract_text_from_file(filepath: str) -> tuple:
             for row in ws.iter_rows():
                 for cell in row:
                     if cell.value and isinstance(cell.value, str) and cell.value.strip():
-                        segments.append({"text": cell.value, "ref": cell})
+                        segments.append({"text": cell.value, "ref": cell, "ref_text": cell.value})
         return segments, "xlsx"
 
     elif ext == ".pptx":
@@ -507,7 +565,7 @@ def extract_text_from_file(filepath: str) -> tuple:
                 if shape.has_text_frame:
                     for para in shape.text_frame.paragraphs:
                         if para.text.strip():
-                            segments.append({"text": para.text, "ref": (shape.text_frame, para)})
+                            segments.append({"text": para.text, "ref": (shape.text_frame, para), "ref_text": para.text})
         return segments, "pptx"
 
     else:
@@ -526,25 +584,39 @@ def export_corrected_file(segments: List[Dict], file_type: str, output_path: str
     elif file_type == "docx":
         from docx import Document
         doc = Document(original_path)
+        # 通过文本内容匹配段落（ref 对象来自不同 Document 实例，不能直接引用）
+        available_paras = [p for p in doc.paragraphs if p.text.strip()]
         for seg in segments:
-            ref = seg.get("ref")
-            if ref and hasattr(ref, "text"):
-                # 清除原段落内容并写入修正文本
-                for run in ref.runs:
-                    run.text = ""
-                if ref.runs:
-                    ref.runs[0].text = seg["corrected_text"]
-                else:
-                    ref.add_run(seg["corrected_text"])
+            target_text = seg.get("ref_text", seg.get("original_text", ""))
+            for i, para in enumerate(available_paras):
+                if para.text == target_text or para.text.strip() == target_text.strip():
+                    for run in para.runs:
+                        run.text = ""
+                    if para.runs:
+                        para.runs[0].text = seg["corrected_text"]
+                    else:
+                        para.add_run(seg["corrected_text"])
+                    available_paras.pop(i)
+                    break
         doc.save(output_path)
 
     elif file_type == "xlsx":
         from openpyxl import load_workbook
         wb = load_workbook(original_path)
+        # 通过文本内容匹配单元格
+        all_cells = []
+        for ws in wb.worksheets:
+            for row in ws.iter_rows():
+                for cell in row:
+                    if cell.value and isinstance(cell.value, str) and cell.value.strip():
+                        all_cells.append(cell)
         for seg in segments:
-            ref = seg.get("ref")
-            if ref:
-                ref.value = seg["corrected_text"]
+            target_text = seg.get("ref_text", seg.get("original_text", ""))
+            for i, cell in enumerate(all_cells):
+                if cell.value == target_text or str(cell.value).strip() == target_text.strip():
+                    cell.value = seg["corrected_text"]
+                    all_cells.pop(i)
+                    break
         wb.save(output_path)
 
     elif file_type == "pptx":
@@ -588,11 +660,26 @@ class CorrectWorker(QThread):
     def run(self):
         all_results = []
 
-        for fi, filepath in enumerate(self.files):
+        # 预扫描：统计所有文件的总段落数，用于精确进度计算
+        file_infos = []  # [(filepath, segments, file_type), ...]
+        total_segs_all = 0
+        for filepath in self.files:
             try:
                 segments, file_type = extract_text_from_file(filepath)
+                file_infos.append((filepath, segments, file_type))
+                total_segs_all += len(segments)
             except Exception as e:
                 self.statusChanged.emit(f"解析失败: {Path(filepath).name} - {e}")
+                file_infos.append((filepath, [], None))
+
+        if total_segs_all == 0:
+            self.statusChanged.emit("没有可处理的文本段落")
+            self.finished_result.emit([])
+            return
+
+        processed_segs = 0
+        for fi, (filepath, segments, file_type) in enumerate(file_infos):
+            if not segments:
                 continue
 
             file_results = []
@@ -629,10 +716,12 @@ class CorrectWorker(QThread):
                     "corrected_text": current_text,
                     "changes": all_changes,
                     "ref": seg["ref"],
+                    "ref_text": seg.get("ref_text", text),
                 }
                 file_results.append(result)
 
-                pct = int(((fi * total_segs + si + 1) / (len(self.files) * total_segs)) * 100)
+                processed_segs += 1
+                pct = int((processed_segs / total_segs_all) * 100) if total_segs_all > 0 else 100
                 self.progressChanged.emit(pct)
                 self.segmentDone.emit(si, current_text, all_changes)
 
@@ -806,6 +895,16 @@ class Backend(QObject):
 
     apiProvider = Property(str, _get_api_provider, _set_api_provider, notify=settingsChanged)
 
+    def _get_api_base(self):
+        return self._api_base
+
+    def _set_api_base(self, v):
+        if self._api_base != v:
+            self._api_base = v
+            self.settingsChanged.emit()
+
+    apiBase = Property(str, _get_api_base, _set_api_base, notify=settingsChanged)
+
     # ---- QML 可调用方法 ----
 
     @Slot(list)
@@ -820,7 +919,7 @@ class Backend(QObject):
 
         self._files = []
         for f in files:
-            path = str(f).replace("file:///", "")
+            path = _safe_path(f)
             if os.path.isfile(path):
                 self._files.append(path)
 
@@ -912,7 +1011,7 @@ class Backend(QObject):
             self._set_status("没有可导出的结果")
             return
 
-        output_dir = str(output_dir).replace("file:///", "")
+        output_dir = _safe_path(output_dir)
         os.makedirs(output_dir, exist_ok=True)
 
         # 按文件分组
@@ -931,6 +1030,7 @@ class Backend(QObject):
             files_groups[fp]["segments"].append({
                 "corrected_text": accepted_text,
                 "ref": r.get("ref"),
+                "ref_text": r.get("ref_text", r.get("original_text", "")),
             })
 
         exported = 0
@@ -950,7 +1050,11 @@ class Backend(QObject):
     @Slot(str, result=str)
     def readFileContent(self, filepath):
         """读取文件内容（预览用）"""
-        filepath = str(filepath).replace("file:///", "")
+        filepath = _safe_path(filepath)
+        # 安全检查：拒绝空路径和路径穿越
+        resolved = Path(filepath).resolve()
+        if not resolved.exists() or not resolved.is_file():
+            return "读取失败: 文件不存在"
         try:
             segments, _ = extract_text_from_file(filepath)
             return "\n\n".join(s["text"] for s in segments)
