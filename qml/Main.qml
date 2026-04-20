@@ -55,7 +55,7 @@ Window {
     Rectangle {
         id: bgCard
         anchors.fill: parent
-        radius: 0
+        radius: 20
         border.width: 0
         border.color: fileDropZone.dragging
             ? theme.borderDrag
