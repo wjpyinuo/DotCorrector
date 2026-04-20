@@ -820,7 +820,7 @@ class Backend(QObject):
 
         self._files = []
         for f in files:
-            path = f.toString().replace("file:///", "") if isinstance(f, str) else str(f)
+            path = str(f).replace("file:///", "")
             if os.path.isfile(path):
                 self._files.append(path)
 
@@ -912,7 +912,7 @@ class Backend(QObject):
             self._set_status("没有可导出的结果")
             return
 
-        output_dir = output_dir.toString().replace("file:///", "") if isinstance(output_dir, str) else output_dir
+        output_dir = str(output_dir).replace("file:///", "")
         os.makedirs(output_dir, exist_ok=True)
 
         # 按文件分组
@@ -950,7 +950,7 @@ class Backend(QObject):
     @Slot(str, result=str)
     def readFileContent(self, filepath):
         """读取文件内容（预览用）"""
-        filepath = filepath.toString().replace("file:///", "") if isinstance(filepath, str) else filepath
+        filepath = str(filepath).replace("file:///", "")
         try:
             segments, _ = extract_text_from_file(filepath)
             return "\n\n".join(s["text"] for s in segments)
