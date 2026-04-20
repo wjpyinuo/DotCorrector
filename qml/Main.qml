@@ -2,7 +2,6 @@ import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Effects
 import App.Backend
 
 Window {
@@ -78,18 +77,6 @@ Window {
             gradient: Gradient {
                 GradientStop { position: 0.0; color: Qt.rgba(1,1,1,0.18) }
                 GradientStop { position: 1.0; color: Qt.rgba(1,1,1,0) }
-            }
-        }
-
-        // 外发光
-        layer.enabled: true
-        layer.effect: MultiEffect {
-            shadowEnabled: true
-            shadowBlur: 1.0
-            shadowColor: "#80b4ff"
-            shadowOpacity: fileDropZone.dragging ? 0.8 : 0.0
-            Behavior on shadowOpacity {
-                NumberAnimation { duration: 300 }
             }
         }
 
