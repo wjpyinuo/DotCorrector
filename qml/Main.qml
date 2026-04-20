@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Window
 import QtQuick.Controls
-import QtQuick.Layouts
 import App.Backend
 
 Window {
@@ -225,54 +224,52 @@ Window {
                 // 状态文本
                 Text {
                     x: 4
-                    anchors.verticalCenter: parent.verticalCenter
+                    y: (parent.height - height) / 2
                     text: backend.status
                     color: theme.textSecondary
                     font.pixelSize: 11
                     visible: !backend.busy
                 }
 
-                // 右侧按钮
-                Row {
-                    anchors.right: parent.right
-                    anchors.verticalCenter: parent.verticalCenter
-                    spacing: 8
-
-                    GlowButton {
-                        text: "设置"
-                        onClicked: {
-                            if (pageStack.depth === 1 && !root.showPreview)
-                                pageStack.push(settingsPage)
-                        }
-                        themeDark: theme.dark
-                        gradStartNormal: theme.btnGradStartNormal
-                        gradEndNormal: theme.btnGradEndNormal
-                        gradStartHover: theme.btnGradStartHover
-                        gradEndHover: theme.btnGradEndHover
-                        borderColorNormal: theme.btnBorderNormal
-                        borderColorHover: theme.btnBorderHover
+                // 右侧按钮（绝对定位）
+                GlowButton {
+                    x: parent.width - width - 8; y: (parent.height - height) / 2
+                    text: "设置"
+                    onClicked: {
+                        if (pageStack.depth === 1 && !root.showPreview)
+                            pageStack.push(settingsPage)
                     }
+                    themeDark: theme.dark
+                    gradStartNormal: theme.btnGradStartNormal
+                    gradEndNormal: theme.btnGradEndNormal
+                    gradStartHover: theme.btnGradStartHover
+                    gradEndHover: theme.btnGradEndHover
+                    borderColorNormal: theme.btnBorderNormal
+                    borderColorHover: theme.btnBorderHover
+                }
 
-                    GlowButton {
-                        text: "查看结果"
-                        buttonEnabled: !backend.busy && backend.resultsJson !== "[]"
-                        onClicked: {
-                            if (pageStack.depth > 1)
-                                pageStack.pop()
-                            root.showPreview = true
-                        }
-                        themeDark: theme.dark
-                        gradStartNormal: theme.btnGradStartNormal
-                        gradEndNormal: theme.btnGradEndNormal
-                        gradStartHover: theme.btnGradStartHover
-                        gradEndHover: theme.btnGradEndHover
-                        borderColorNormal: theme.btnBorderNormal
-                        borderColorHover: theme.btnBorderHover
+                GlowButton {
+                    x: parent.width - width * 2 - 16; y: (parent.height - height) / 2
+                    text: "查看结果"
+                    buttonEnabled: !backend.busy && backend.resultsJson !== "[]"
+                    onClicked: {
+                        if (pageStack.depth > 1)
+                            pageStack.pop()
+                        root.showPreview = true
                     }
+                    themeDark: theme.dark
+                    gradStartNormal: theme.btnGradStartNormal
+                    gradEndNormal: theme.btnGradEndNormal
+                    gradStartHover: theme.btnGradStartHover
+                    gradEndHover: theme.btnGradEndHover
+                    borderColorNormal: theme.btnBorderNormal
+                    borderColorHover: theme.btnBorderHover
+                }
 
-                    GlowButton {
-                        text: backend.busy ? "处理中..." : "开始纠错"
-                        buttonEnabled: !backend.busy && root.droppedFiles.length > 0
+                GlowButton {
+                    x: parent.width - width * 3 - 24; y: (parent.height - height) / 2
+                    text: backend.busy ? "处理中..." : "开始纠错"
+                    buttonEnabled: !backend.busy && root.droppedFiles.length > 0
                         onClicked: backend.startCorrect(root.droppedFiles)
                         themeDark: theme.dark
                         gradStartNormal: theme.btnGradStartNormal
@@ -283,7 +280,6 @@ Window {
                         borderColorHover: theme.btnBorderHover
                     }
                 }
-            }
         }
     }
 

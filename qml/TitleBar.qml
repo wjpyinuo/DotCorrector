@@ -3,6 +3,7 @@ import QtQuick
 Item {
     id: bar
     height: 40
+    clip: true
 
     property string title: ""
     property bool themeDark: true
@@ -14,9 +15,10 @@ Item {
     signal togglePin()
     signal openSettings()
 
-    // 拖拽区域
     MouseArea {
-        anchors.fill: parent
+        x: 0; y: 0
+        width: bar.width - 150
+        height: bar.height
         property point lastPos
         onPressed: (m) => lastPos = Qt.point(m.x, m.y)
         onPositionChanged: (m) => {
@@ -24,66 +26,60 @@ Item {
         }
     }
 
-    // 标题
     Text {
         id: titleText
         x: 10
-        anchors.verticalCenter: parent.verticalCenter
+        y: (bar.height - height) / 2
         text: bar.title
         color: bar.themeDark ? "white" : "#1a1a2e"
         font.pixelSize: 15
         font.bold: true
-        elide: Text.ElideRight
-        width: Math.min(implicitWidth, bar.width - btnsRow.width - 30)
     }
 
-    // 右侧按钮组（绝对定位）
-    Row {
-        id: btnsRow
-        anchors.right: parent.right
-        anchors.rightMargin: 4
-        anchors.verticalCenter: parent.verticalCenter
-        spacing: 4
-
-        WinButton {
-            text: bar.themeDark ? "☀" : "🌙"
-            width: 28; height: 28; radius: 14
-            bgColor: bar.themeDark ? "#40ffffff" : "#40000000"
-            hoverColor: bar.themeDark ? "#60ffffff" : "#60000000"
-            textColor: bar.themeDark ? "white" : "#1a1a2e"
-            onClicked: bar.toggleTheme()
-        }
-        WinButton {
-            text: bar.pinned ? "📌" : "📍"
-            width: 28; height: 28; radius: 14
-            bgColor: bar.pinned ? (bar.themeDark ? "#6080e0ff" : "#604090ff") : (bar.themeDark ? "#40ffffff" : "#40000000")
-            hoverColor: bar.themeDark ? "#60ffffff" : "#60000000"
-            textColor: bar.themeDark ? "white" : "#1a1a2e"
-            onClicked: bar.togglePin()
-        }
-        WinButton {
-            text: "⚙"
-            width: 28; height: 28; radius: 14
-            bgColor: bar.themeDark ? "#40ffffff" : "#40000000"
-            hoverColor: bar.themeDark ? "#60ffffff" : "#60000000"
-            textColor: bar.themeDark ? "white" : "#1a1a2e"
-            onClicked: bar.openSettings()
-        }
-        WinButton {
-            text: "—"
-            width: 28; height: 28; radius: 14
-            bgColor: bar.themeDark ? "#40ffffff" : "#40000000"
-            hoverColor: bar.themeDark ? "#60ffffff" : "#60000000"
-            textColor: bar.themeDark ? "white" : "#1a1a2e"
-            onClicked: bar.minimize()
-        }
-        WinButton {
-            text: "✕"
-            width: 28; height: 28; radius: 14
-            bgColor: bar.themeDark ? "#80ff5050" : "#80ff3030"
-            hoverColor: bar.themeDark ? "#c8ff3030" : "#ff4040"
-            textColor: "white"
-            onClicked: bar.close()
-        }
+    // 按钮 - 从右到左排列
+    WinButton {
+        x: bar.width - 32; y: 6
+        width: 28; height: 28; radius: 14
+        text: "✕"
+        bgColor: bar.themeDark ? "#80ff5050" : "#80ff3030"
+        hoverColor: bar.themeDark ? "#c8ff3030" : "#ff4040"
+        textColor: "white"
+        onClicked: bar.close()
+    }
+    WinButton {
+        x: bar.width - 64; y: 6
+        width: 28; height: 28; radius: 14
+        text: "—"
+        bgColor: bar.themeDark ? "#40ffffff" : "#40000000"
+        hoverColor: bar.themeDark ? "#60ffffff" : "#60000000"
+        textColor: bar.themeDark ? "white" : "#1a1a2e"
+        onClicked: bar.minimize()
+    }
+    WinButton {
+        x: bar.width - 96; y: 6
+        width: 28; height: 28; radius: 14
+        text: "⚙"
+        bgColor: bar.themeDark ? "#40ffffff" : "#40000000"
+        hoverColor: bar.themeDark ? "#60ffffff" : "#60000000"
+        textColor: bar.themeDark ? "white" : "#1a1a2e"
+        onClicked: bar.openSettings()
+    }
+    WinButton {
+        x: bar.width - 128; y: 6
+        width: 28; height: 28; radius: 14
+        text: bar.pinned ? "📌" : "📍"
+        bgColor: bar.pinned ? (bar.themeDark ? "#6080e0ff" : "#604090ff") : (bar.themeDark ? "#40ffffff" : "#40000000")
+        hoverColor: bar.themeDark ? "#60ffffff" : "#60000000"
+        textColor: bar.themeDark ? "white" : "#1a1a2e"
+        onClicked: bar.togglePin()
+    }
+    WinButton {
+        x: bar.width - 160; y: 6
+        width: 28; height: 28; radius: 14
+        text: bar.themeDark ? "☀" : "🌙"
+        bgColor: bar.themeDark ? "#40ffffff" : "#40000000"
+        hoverColor: bar.themeDark ? "#60ffffff" : "#60000000"
+        textColor: bar.themeDark ? "white" : "#1a1a2e"
+        onClicked: bar.toggleTheme()
     }
 }

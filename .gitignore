@@ -3,4 +3,4 @@ __pycache__/
 *.pyo
 .venv/
 venv/
-verify_screenshot.png
+_*.png
