@@ -417,6 +417,7 @@ Item {
         id: bottomBar
         x: 0; y: parent.height - height
         width: parent.width; height: 42
+        clip: true
 
         Row {
             x: 0; anchors.verticalCenter: parent.verticalCenter

@@ -222,6 +222,7 @@ Window {
                 width: parent.width
                 height: 42
                 visible: !root.showPreview
+                clip: true
 
                 // 状态文本
                 Text {
