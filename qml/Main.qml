@@ -55,9 +55,8 @@ Window {
     Rectangle {
         id: bgCard
         anchors.fill: parent
-        anchors.margins: 15
-        radius: 20
-        border.width: 1.5
+        radius: 0
+        border.width: 0
         border.color: fileDropZone.dragging
             ? theme.borderDrag
             : theme.borderNormal
@@ -233,8 +232,7 @@ Window {
     }
 
     // ============ 窗口边缘缩放 ============
-    // 注意：bgCard 有 15px margin，边缘 MouseArea 在 bgCard 外面那 15px 区域
-    property int edge: 10
+    property int edge: 4
 
     // 左边缘
     MouseArea {
