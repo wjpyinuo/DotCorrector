@@ -167,7 +167,8 @@ Window {
                     Item {
                         FileDropZone {
                             id: fileDropZone
-                            anchors.fill: parent
+                            width: parent.width
+                            height: parent.height
                             busy: backend.busy
                             progress: backend.progress
                             status: backend.status
