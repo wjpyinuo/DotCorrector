@@ -14,6 +14,8 @@ Window {
     flags: Qt.FramelessWindowHint | Qt.Window
     color: "transparent"
 
+    property var droppedFiles: []
+
     // ============ 主题系统 ============
     QtObject {
         id: theme
@@ -167,6 +169,7 @@ Window {
                             progBg: theme.progressBg
                             progStart: theme.progressBarStart
                             progEnd: theme.progressBarEnd
+                            onFilesChanged: root.droppedFiles = files
                         }
                     }
                 }
@@ -189,8 +192,8 @@ Window {
 
                 GlowButton {
                     text: backend.busy ? "处理中..." : "开始纠错"
-                    buttonEnabled: !backend.busy && fileDropZone.files.length > 0
-                    onClicked: backend.startCorrect(fileDropZone.files)
+                    buttonEnabled: !backend.busy && root.droppedFiles.length > 0
+                    onClicked: backend.startCorrect(root.droppedFiles)
                     themeDark: theme.dark
                     gradStartNormal: theme.btnGradStartNormal
                     gradEndNormal: theme.btnGradEndNormal
