@@ -16,6 +16,7 @@ Window {
 
     property var droppedFiles: []
     property bool showPreview: false
+    property bool pinned: false
 
     // ============ 主题系统 ============
     QtObject {
@@ -90,6 +91,7 @@ Window {
                 Layout.fillWidth: true
                 title: "墨正 DotCorrector"
                 themeDark: theme.dark
+                pinned: root.pinned
                 onMinimize: root.showMinimized()
                 onClose: closeAnim.start()
                 onDragging: (dx, dy) => {
@@ -97,6 +99,14 @@ Window {
                     root.y += dy
                 }
                 onToggleTheme: theme.dark = !theme.dark
+                onTogglePin: {
+                    root.pinned = !root.pinned
+                    if (root.pinned) {
+                        root.flags = root.flags | Qt.WindowStaysOnTopHint
+                    } else {
+                        root.flags = (root.flags | Qt.WindowStaysOnTopHint) ^ Qt.WindowStaysOnTopHint
+                    }
+                }
                 onOpenSettings: {
                     if (root.showPreview) {
                         root.showPreview = false

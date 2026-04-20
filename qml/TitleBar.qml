@@ -11,7 +11,10 @@ Item {
     signal close()
     signal dragging(real dx, real dy)
     signal toggleTheme()
+    signal togglePin()
     signal openSettings()
+
+    property bool pinned: false
 
     MouseArea {
         anchors.fill: parent
@@ -42,6 +45,14 @@ Item {
             hoverColor: bar.themeDark ? "#60ffffff" : "#60000000"
             textColor: bar.themeDark ? "white" : "#1a1a2e"
             onClicked: bar.toggleTheme()
+        }
+
+        WinButton {
+            text: bar.pinned ? "📌" : "📍"
+            bgColor: bar.pinned ? (bar.themeDark ? "#6080e0ff" : "#604090ff") : (bar.themeDark ? "#40ffffff" : "#40000000")
+            hoverColor: bar.themeDark ? "#60ffffff" : "#60000000"
+            textColor: bar.themeDark ? "white" : "#1a1a2e"
+            onClicked: bar.togglePin()
         }
 
         WinButton {
