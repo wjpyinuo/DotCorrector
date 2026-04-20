@@ -1,7 +1,7 @@
 import sys
 import ctypes
 from pathlib import Path
-from PySide6.QtCore import QUrl
+from PySide6.QtCore import QUrl, QTimer
 from PySide6.QtGui import QGuiApplication, QFont
 from PySide6.QtQml import QQmlApplicationEngine, qmlRegisterType
 
@@ -49,9 +49,12 @@ if __name__ == "__main__":
     if not engine.rootObjects():
         sys.exit(-1)
 
-    # 应用 Win11 Mica 特效
-    root_obj = engine.rootObjects()[0]
-    hwnd = int(root_obj.winId())
-    enable_mica(hwnd)
+    # 应用 Win11 Mica 特效（延迟调用，等窗口完全创建）
+    def apply_mica():
+        root_obj = engine.rootObjects()[0]
+        hwnd = int(root_obj.winId())
+        enable_mica(hwnd)
+
+    QTimer.singleShot(100, apply_mica)
 
     sys.exit(app.exec())

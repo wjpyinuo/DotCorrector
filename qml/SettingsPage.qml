@@ -65,6 +65,7 @@ Item {
 
             ToggleSwitch {
                 checked: true
+                dark: root.themeDark
             }
             Column {
                 Text { text: "本地纠错（免费）"; color: root.textColor; font.pixelSize: 13; font.bold: true }
@@ -81,6 +82,7 @@ Item {
             ToggleSwitch {
                 id: aiToggle
                 checked: false
+                dark: root.themeDark
             }
             Column {
                 Text { text: "AI 精校（需 API Key）"; color: root.textColor; font.pixelSize: 13; font.bold: true }

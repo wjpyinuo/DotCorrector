@@ -5,11 +5,12 @@ Item {
     width: 44; height: 24
 
     property bool checked: false
+    property bool dark: true
 
     Rectangle {
         anchors.fill: parent
         radius: height / 2
-        color: root.checked ? "#50a0ff" : (root.parent && root.parent.themeDark !== undefined ? "#60ffffff" : "#808080")
+        color: root.checked ? "#50a0ff" : (root.dark ? "#60ffffff" : "#808080")
         Behavior on color { ColorAnimation { duration: 200 } }
 
         Rectangle {

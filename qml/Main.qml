@@ -57,7 +57,6 @@ Window {
         anchors.fill: parent
         anchors.margins: 15
         radius: 20
-        color: theme.cardBg
         border.width: 1.5
         border.color: fileDropZone.dragging
             ? theme.borderDrag
@@ -136,6 +135,20 @@ Window {
                         property: "opacity"
                         from: 0; to: 1
                         duration: 300
+                    }
+                }
+                pushExit: Transition {
+                    PropertyAnimation {
+                        property: "opacity"
+                        from: 1; to: 0
+                        duration: 250
+                    }
+                }
+                popEnter: Transition {
+                    PropertyAnimation {
+                        property: "opacity"
+                        from: 0; to: 1
+                        duration: 250
                     }
                 }
                 popExit: Transition {
@@ -220,9 +233,12 @@ Window {
     }
 
     // ============ 窗口边缘缩放 ============
+    // 注意：bgCard 有 15px margin，边缘 MouseArea 在 bgCard 外面那 15px 区域
+    property int edge: 10
+
     // 左边缘
     MouseArea {
-        width: 6; anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
+        width: root.edge; anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
         cursorShape: Qt.SizeHorCursor
         property real startX
         onPressed: (m) => startX = m.globalX
@@ -236,7 +252,7 @@ Window {
     }
     // 右边缘
     MouseArea {
-        width: 6; anchors { right: parent.right; top: parent.top; bottom: parent.bottom }
+        width: root.edge; anchors { right: parent.right; top: parent.top; bottom: parent.bottom }
         cursorShape: Qt.SizeHorCursor
         property real startX
         onPressed: (m) => startX = m.globalX
@@ -249,7 +265,7 @@ Window {
     }
     // 上边缘
     MouseArea {
-        height: 6; anchors { top: parent.top; left: parent.left; right: parent.right }
+        height: root.edge; anchors { top: parent.top; left: parent.left; right: parent.right }
         cursorShape: Qt.SizeVerCursor
         property real startY
         onPressed: (m) => startY = m.globalY
@@ -263,7 +279,7 @@ Window {
     }
     // 下边缘
     MouseArea {
-        height: 6; anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
+        height: root.edge; anchors { bottom: parent.bottom; left: parent.left; right: parent.right }
         cursorShape: Qt.SizeVerCursor
         property real startY
         onPressed: (m) => startY = m.globalY
@@ -276,7 +292,7 @@ Window {
     }
     // 左上角
     MouseArea {
-        width: 16; height: 16; anchors { left: parent.left; top: parent.top }
+        width: root.edge + 6; height: root.edge + 6; anchors { left: parent.left; top: parent.top }
         cursorShape: Qt.SizeFDiagCursor
         property point start
         onPressed: (m) => start = Qt.point(m.globalX, m.globalY)
@@ -290,7 +306,7 @@ Window {
     }
     // 右上角
     MouseArea {
-        width: 16; height: 16; anchors { right: parent.right; top: parent.top }
+        width: root.edge + 6; height: root.edge + 6; anchors { right: parent.right; top: parent.top }
         cursorShape: Qt.SizeBDiagCursor
         property point start
         onPressed: (m) => start = Qt.point(m.globalX, m.globalY)
@@ -305,7 +321,7 @@ Window {
     }
     // 左下角
     MouseArea {
-        width: 16; height: 16; anchors { left: parent.left; bottom: parent.bottom }
+        width: root.edge + 6; height: root.edge + 6; anchors { left: parent.left; bottom: parent.bottom }
         cursorShape: Qt.SizeBDiagCursor
         property point start
         onPressed: (m) => start = Qt.point(m.globalX, m.globalY)
@@ -320,7 +336,7 @@ Window {
     }
     // 右下角
     MouseArea {
-        width: 16; height: 16; anchors { right: parent.right; bottom: parent.bottom }
+        width: root.edge + 6; height: root.edge + 6; anchors { right: parent.right; bottom: parent.bottom }
         cursorShape: Qt.SizeFDiagCursor
         property point start
         onPressed: (m) => start = Qt.point(m.globalX, m.globalY)
