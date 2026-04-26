@@ -1,9 +1,10 @@
 @echo off
+chcp 65001 >nul 2>&1
 setlocal EnableDelayedExpansion
 echo.
-echo  ╔══════════════════════════════════════╗
-echo  ║   DotShutdown - Build Script         ║
-echo  ╚══════════════════════════════════════╝
+echo  ==================================
+echo   DotShutdown - Build Script
+echo  ==================================
 echo.
 
 :: Check .NET SDK
@@ -48,14 +49,7 @@ echo.
 
 :: Publish single file
 echo [5/5] Publishing self-contained single file...
-dotnet publish src\DotShutdown.csproj ^
-    -c Release ^
-    -p:Platform=x64 ^
-    -p:PublishSingleFile=true ^
-    -p:SelfContained=true ^
-    -p:IncludeNativeLibrariesForSelfExtract=true ^
-    -p:EnableCompressionInSingleFile=true ^
-    --output dist\x64
+dotnet publish src\DotShutdown.csproj -c Release -p:Platform=x64 -p:PublishSingleFile=true -p:SelfContained=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true --output dist\x64
 
 if errorlevel 1 (
     echo [ERROR] Publish failed
@@ -64,11 +58,11 @@ if errorlevel 1 (
 )
 
 echo.
-echo  ╔════════════════════════════════════════════╗
-echo  ║   Build Complete!                          ║
-echo  ╠════════════════════════════════════════════╣
-echo  ║   Output: dist\x64\DotShutdown.exe         ║
-echo  ╚════════════════════════════════════════════╝
+echo  ==================================
+echo   Build Complete!
+echo  ==================================
+echo.
+echo   Output: dist\x64\DotShutdown.exe
 echo.
 echo  Usage:
 echo    DotShutdown.exe                    Launch GUI
