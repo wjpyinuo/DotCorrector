@@ -1,0 +1,29 @@
+## Build output
+[Bb]in/
+[Oo]bj/
+[Dd]ist/
+[Dd]ebug/
+[Rr]elease/
+
+## IDE
+.vs/
+*.user
+*.suo
+*.userprefs
+*.sln.docstates
+.idea/
+
+## NuGet
+packages/
+*.nupkg
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+## Publish
+publish/
