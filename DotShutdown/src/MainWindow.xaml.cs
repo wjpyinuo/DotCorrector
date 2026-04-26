@@ -27,7 +27,7 @@ public sealed partial class MainWindow : Window
         // Set title bar
         _appWindow.Title = "DotShutdown";
 
-        // Set icon (use embedded resource or skip if not available)
+        // Set icon if available
         var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "app-icon.ico");
         if (File.Exists(iconPath))
             _appWindow.SetIcon(iconPath);

@@ -106,8 +106,7 @@
     <!-- Tray Icon -->
     <hi:TaskbarIcon
         x:Name="TrayIcon"
-        ToolTipText="DotShutdown - 就绪"
-        IconSource="Assets/app-icon.ico">
+        ToolTipText="DotShutdown - 就绪">
 
         <hi:TaskbarIcon.ContextFlyout>
             <MenuFlyout>
